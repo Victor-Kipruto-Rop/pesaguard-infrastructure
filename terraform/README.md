@@ -31,6 +31,17 @@ create the remote-state infrastructure once per environment. Everything
 under `terraform/live/` then uses that remote backend via
 `environments/<env>/backend.hcl`.
 
+## A note on shared `terraform.tfvars`
+
+Each environment has one `terraform.tfvars` (from `terraform.tfvars.example`)
+used for both `terraform/bootstrap` and `terraform/live/<env>` via the
+Makefile's `plan`/`apply`/`destroy` targets. `bootstrap` only declares a
+handful of variables (`project`, `environment`, `region`, ...), so running
+it against a tfvars file that also has `vpc_cidr`, `availability_zones`,
+etc. produces harmless `Warning: Value for undeclared variable` messages —
+not errors. If that becomes noisy, split into `bootstrap.tfvars` and
+`live.tfvars` per environment instead.
+
 ## Conventions (all modules/stacks/live configs)
 
 - `terraform fmt` and `terraform validate` must pass (`make fmt`,

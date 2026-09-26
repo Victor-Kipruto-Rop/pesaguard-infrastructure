@@ -5,6 +5,45 @@ grouped by implementation phase. This log reflects what has actually been
 implemented and validated — not what is planned (see README.md for the
 phase roadmap).
 
+## [Unreleased] — Phase 3: Networking
+
+### Added
+- `terraform/modules/networking/` — VPC (`/16`), public/app/data subnets
+  across N AZs (CIDR math via `cidrsubnet`), Internet Gateway, NAT
+  gateway(s) (single shared or one-per-AZ via `single_nat_gateway`), route
+  tables (public → IGW, app → NAT per AZ, data → no internet route), S3 +
+  DynamoDB gateway VPC endpoints, VPC flow logs to CloudWatch with a
+  scoped IAM role.
+- `terraform/modules/security-groups/` — least-privilege SGs for ALB, app
+  tier, PostgreSQL, Redis, Kafka/Schema Registry, and monitoring,
+  referencing each other by security group ID rather than CIDR blocks for
+  all internal traffic. No bastion SG — SSM Session Manager is the
+  documented path for admin access.
+- `terraform/modules/dns/` — Route 53 public hosted zone only (no records
+  yet — see the module README for why records wait until Phase 7).
+- `terraform/live/{dev,staging,production}/` — root configs instantiating
+  the above: dev/staging use a single shared NAT gateway, production uses
+  one per AZ and owns the DNS zone.
+- `environments/{dev,staging,production}/terraform.tfvars.example` updated
+  with real `vpc_cidr`, `availability_zones`, and (production) `domain_name`
+  / `create_dns_zone` values.
+
+### Not yet implemented
+- No compute, load balancer, or DNS records — nothing yet answers on any
+  of these VPCs' subnets (Phase 7).
+- No IAM roles beyond the flow-logs role, no KMS, no Secrets Manager
+  (Phase 4).
+- No RDS/Redis/Kafka (Phase 5/6) — the data-tier subnets and their
+  security group exist, but nothing runs in them yet.
+
+### Requires manual action / AWS credentials
+- Applying any `terraform/live/<env>` config requires AWS credentials and
+  `terraform/bootstrap` already applied for that environment.
+- Production's `terraform/live/production` apply additionally requires
+  `CONFIRM=yes` and, per `CONTRIBUTING.md`, a second reviewer.
+- If `production`'s DNS zone is created, the domain must be delegated at
+  the registrar to the zone's name servers (see `terraform/live/production/README.md`).
+
 ## [Unreleased] — Phase 2: Terraform Foundation
 
 ### Added

@@ -5,7 +5,13 @@ project     = "PesaGuard"
 environment = "staging"
 region      = "us-east-1"
 
+# Networking (Phase 3)
+vpc_cidr           = "10.20.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b"]
+
+# DNS: staging does not own the apex zone; leave unset until Phase 7
+# adds a staging.pesaguard.* subdomain record in production's zone.
+# domain_name = ""
+
 # Added by later phases as the corresponding modules land:
-# vpc_cidr            = "10.x.0.0/16"
-# availability_zones  = ["us-east-1a", "us-east-1b"]
-# domain_name         = "pesaguard.victorkipruto.com"
+# (RDS, Redis, Kafka, compute, observability variables)

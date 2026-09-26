@@ -50,7 +50,7 @@ real, working content rather than empty placeholders. Current status:
 
 - [x] Phase 1 — Repository foundation
 - [x] Phase 2 — Terraform foundation
-- [ ] Phase 3 — Networking
+- [x] Phase 3 — Networking
 - [ ] Phase 4 — IAM & security
 - [ ] Phase 5 — Data infrastructure
 - [ ] Phase 6 — Messaging

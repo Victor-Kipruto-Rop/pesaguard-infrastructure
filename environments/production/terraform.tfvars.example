@@ -5,7 +5,14 @@ project     = "PesaGuard"
 environment = "production"
 region      = "us-east-1"
 
+# Networking (Phase 3) -- production uses one NAT gateway per AZ, so at
+# least 2 AZs is required (3 recommended).
+vpc_cidr           = "10.30.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b", "us-east-1c"]
+
+# DNS (Phase 3): production owns and creates the apex zone.
+domain_name     = "pesaguard.victorkipruto.com"
+create_dns_zone = true
+
 # Added by later phases as the corresponding modules land:
-# vpc_cidr            = "10.x.0.0/16"
-# availability_zones  = ["us-east-1a", "us-east-1b"]
-# domain_name         = "pesaguard.victorkipruto.com"
+# (RDS, Redis, Kafka, compute, observability variables)

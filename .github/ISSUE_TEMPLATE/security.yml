@@ -1,0 +1,21 @@
+name: Security Issue
+description: Report a non-sensitive security concern (for sensitive reports, see SECURITY.md instead)
+title: "[Security] "
+labels: ["security"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **If this report involves a live exploit, exposed credentials, or a
+        sensitive vulnerability, do not file a public issue.** Follow the
+        private reporting process in SECURITY.md instead.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+    validations:
+      required: true
+  - type: textarea
+    id: affected
+    attributes:
+      label: Affected resource(s) / module(s)

@@ -1,0 +1,5 @@
+# Default owner for everything in this repository.
+# Update this as the team grows — split out per-directory ownership
+# (e.g. /terraform/modules/networking/ @someone) as it becomes useful.
+
+* @Victor-Kipruto-Rop

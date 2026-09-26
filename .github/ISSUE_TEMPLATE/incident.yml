@@ -1,0 +1,39 @@
+name: Incident
+description: Record an infrastructure incident (outage, degradation, failed deployment)
+title: "[Incident] "
+labels: ["incident"]
+body:
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - SEV1 - full outage
+        - SEV2 - major degradation
+        - SEV3 - minor degradation
+        - SEV4 - no user impact
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: User / system impact
+  - type: textarea
+    id: timeline
+    attributes:
+      label: Timeline
+      description: Timestamps for detection, mitigation, resolution
+  - type: textarea
+    id: root-cause
+    attributes:
+      label: Root cause (if known)
+  - type: textarea
+    id: follow-up
+    attributes:
+      label: Follow-up actions

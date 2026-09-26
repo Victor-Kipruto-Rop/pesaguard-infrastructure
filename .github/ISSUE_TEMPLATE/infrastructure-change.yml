@@ -1,0 +1,38 @@
+name: Infrastructure Change
+description: Propose a change to infrastructure (new resource, module, environment config)
+title: "[Infra] "
+labels: ["infrastructure"]
+body:
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment(s) affected
+      multiple: true
+      options:
+        - development
+        - staging
+        - production
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What change is being proposed?
+      description: Describe the resource(s), module(s), or configuration involved.
+    validations:
+      required: true
+  - type: textarea
+    id: blast-radius
+    attributes:
+      label: Blast radius
+      description: What could this affect if it goes wrong? Any downtime risk?
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checklist
+      options:
+        - label: This change does not touch production without a documented rollback plan
+        - label: No secrets or credentials are included in this change
+        - label: Terraform plan output (or summary) will be attached to the PR

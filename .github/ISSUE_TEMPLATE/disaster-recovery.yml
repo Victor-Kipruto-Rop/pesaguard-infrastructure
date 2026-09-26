@@ -1,0 +1,31 @@
+name: Disaster Recovery
+description: Track a DR drill, DR gap, or DR procedure update
+title: "[DR] "
+labels: ["disaster-recovery"]
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      options:
+        - Scheduled drill
+        - Gap found during review
+        - Procedure update needed
+        - Real failover event
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Which system(s) — database, messaging, region, etc.
+    validations:
+      required: true
+  - type: textarea
+    id: rpo-rto
+    attributes:
+      label: RPO / RTO target and result (if a drill)
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes / findings

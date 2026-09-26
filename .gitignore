@@ -1,0 +1,53 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
+.terraform.lock.hcl
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Secrets & credentials
+*.pem
+*.key
+*.crt
+*.p12
+.env
+.env.*
+!.env.example
+credentials
+*credentials*
+!**/CODEOWNERS
+
+# Ansible
+*.retry
+.vault_pass
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# Logs
+*.log
+logs/
+
+# Local dev
+.direnv/
+.venv/
+__pycache__/
+node_modules/
+
+# Kubernetes local config
+kubeconfig
+*.kubeconfig

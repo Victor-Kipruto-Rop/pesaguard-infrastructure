@@ -1,0 +1,12 @@
+.git
+.github
+*.md
+.editorconfig
+.gitignore
+.dockerignore
+**/.terraform
+*.tfstate
+*.tfstate.*
+.env
+.env.*
+!.env.example

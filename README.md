@@ -48,8 +48,8 @@ Each environment has isolated Terraform state, configuration, secrets, and
 This repository is being built in phases so that every directory contains
 real, working content rather than empty placeholders. Current status:
 
-- [x] Phase 1 — Repository foundation (this commit)
-- [ ] Phase 2 — Terraform foundation
+- [x] Phase 1 — Repository foundation
+- [x] Phase 2 — Terraform foundation
 - [ ] Phase 3 — Networking
 - [ ] Phase 4 — IAM & security
 - [ ] Phase 5 — Data infrastructure

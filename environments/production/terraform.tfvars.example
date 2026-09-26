@@ -1,0 +1,11 @@
+# Copy to terraform.tfvars in this same directory and fill in real values.
+# terraform.tfvars is gitignored -- never commit it.
+
+project     = "PesaGuard"
+environment = "production"
+region      = "us-east-1"
+
+# Added by later phases as the corresponding modules land:
+# vpc_cidr            = "10.x.0.0/16"
+# availability_zones  = ["us-east-1a", "us-east-1b"]
+# domain_name         = "pesaguard.victorkipruto.com"

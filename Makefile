@@ -13,10 +13,15 @@ help:
 	@echo "    make lint       - Lint YAML and shell files"
 	@echo "    make clean      - Remove local Terraform/dev artifacts"
 	@echo ""
+	@echo "  Implemented (Phase 2):"
+	@echo "    make plan DIR=terraform/bootstrap ENV=dev     - terraform plan against DIR"
+	@echo "    make apply DIR=terraform/bootstrap ENV=dev    - terraform apply against DIR"
+	@echo "    make destroy DIR=terraform/bootstrap ENV=dev CONFIRM=yes"
+	@echo "                                                   - terraform destroy (guarded)"
+	@echo "    DIR defaults to terraform/bootstrap, ENV defaults to dev."
+	@echo "    ENV=production additionally requires CONFIRM=yes on apply/destroy."
+	@echo ""
 	@echo "  Not yet implemented (documented, not faked):"
-	@echo "    make plan       - Terraform plan            (Phase 2)"
-	@echo "    make apply      - Terraform apply           (Phase 2)"
-	@echo "    make destroy    - Terraform destroy          (Phase 2, guarded)"
 	@echo "    make up/down    - Local dev stack            (Phase 7)"
 	@echo "    make logs       - Tail local dev stack logs  (Phase 7)"
 	@echo "    make health     - Infrastructure health check (Phase 8)"
@@ -63,6 +68,42 @@ lint:
 	@if [ -z "$$(find . -name '*.sh' 2>/dev/null)" ]; then \
 		echo "No shell scripts yet (Phase 7+)."; \
 	fi
+
+DIR  ?= terraform/bootstrap
+ENV  ?= dev
+ENV_DIR := $(if $(filter dev,$(ENV)),development,$(ENV))
+TFVARS := $(CURDIR)/environments/$(ENV)/terraform.tfvars
+
+## plan: Terraform plan for DIR against ENV's tfvars (DIR=terraform/bootstrap ENV=dev by default)
+plan:
+	@if [ ! -f "$(TFVARS)" ]; then \
+		echo "Missing $(TFVARS) — copy environments/$(ENV)/terraform.tfvars.example to terraform.tfvars first."; \
+		exit 1; \
+	fi
+	terraform -chdir=$(DIR) init -input=false
+	terraform -chdir=$(DIR) plan -var-file=$(TFVARS)
+
+## apply: Terraform apply for DIR against ENV's tfvars. Production requires CONFIRM=yes.
+apply:
+	@if [ ! -f "$(TFVARS)" ]; then \
+		echo "Missing $(TFVARS) — copy environments/$(ENV)/terraform.tfvars.example to terraform.tfvars first."; \
+		exit 1; \
+	fi
+	@if [ "$(ENV_DIR)" = "production" ] && [ "$(CONFIRM)" != "yes" ]; then \
+		echo "Refusing to apply against production without CONFIRM=yes"; \
+		exit 1; \
+	fi
+	terraform -chdir=$(DIR) init -input=false
+	terraform -chdir=$(DIR) apply -var-file=$(TFVARS)
+
+## destroy: Terraform destroy for DIR against ENV's tfvars. Always requires CONFIRM=yes.
+destroy:
+	@if [ "$(CONFIRM)" != "yes" ]; then \
+		echo "Refusing to destroy without CONFIRM=yes"; \
+		exit 1; \
+	fi
+	terraform -chdir=$(DIR) init -input=false
+	terraform -chdir=$(DIR) destroy -var-file=$(TFVARS)
 
 ## clean: Remove local Terraform and dev artifacts
 clean:

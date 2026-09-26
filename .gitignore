@@ -13,6 +13,8 @@ override.tf.json
 *_override.tf.json
 .terraformrc
 terraform.rc
+backend.hcl
+!backend.hcl.example
 
 # Secrets & credentials
 *.pem

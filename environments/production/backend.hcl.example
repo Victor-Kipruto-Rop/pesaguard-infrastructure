@@ -1,0 +1,12 @@
+# Copy to backend.hcl in this same directory after running
+# terraform/bootstrap for the "production" environment, and fill in the
+# values from that module's "backend_hcl" output. backend.hcl is
+# gitignored -- never commit it (bucket/table names are not secret, but
+# keeping backend config out of git avoids environments drifting apart
+# silently).
+
+bucket         = "pesaguard-tfstate-production-<account-id>"
+key            = "environments/production/terraform.tfstate"
+region         = "us-east-1"
+dynamodb_table = "pesaguard-tflock-production"
+encrypt        = true

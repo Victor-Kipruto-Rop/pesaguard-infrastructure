@@ -5,6 +5,39 @@ grouped by implementation phase. This log reflects what has actually been
 implemented and validated — not what is planned (see README.md for the
 phase roadmap).
 
+## [Unreleased] — Phase 2: Terraform Foundation
+
+### Added
+- `terraform/bootstrap/` — a real, working Terraform module that creates
+  the remote state backend (S3 bucket with versioning + encryption +
+  public-access-blocked, DynamoDB lock table with point-in-time recovery)
+  for one environment at a time. Uses local state intentionally (see
+  `terraform/bootstrap/README.md` for why, and the backup implication).
+- `terraform/README.md` documenting the `bootstrap/ modules/ stacks/
+  live/` layout and module conventions.
+- `environments/{dev,staging,production}/README.md`,
+  `terraform.tfvars.example`, and `backend.hcl.example` for all three
+  environments.
+- `Makefile`: real `plan` / `apply` / `destroy` targets parameterized by
+  `DIR` and `ENV`, with production requiring `CONFIRM=yes` on `apply`,
+  and `destroy` always requiring `CONFIRM=yes`.
+- `.gitignore` updated so `backend.hcl` and `terraform.tfvars` (the real,
+  filled-in files) are never committed, while their `.example` templates
+  are tracked.
+
+### Not yet implemented
+- No `terraform/modules/` (networking, IAM, RDS, etc.) — Phase 3+.
+- No `terraform/live/<env>/` root configs — nothing to plan/apply yet
+  beyond `bootstrap`.
+- CI has no Terraform validation workflow yet (Phase 9); `make validate`
+  works locally if the `terraform` CLI is installed.
+
+### Requires manual action
+- Run `terraform/bootstrap` once per environment (requires AWS
+  credentials) before any remote-backend Terraform can be used.
+- Back up each environment's `terraform/bootstrap/terraform.tfstate`
+  manually — see `terraform/bootstrap/README.md`.
+
 ## [Unreleased] — Phase 1: Repository Foundation
 
 ### Added

@@ -52,7 +52,7 @@ real, working content rather than empty placeholders. Current status:
 - [x] Phase 2 — Terraform foundation
 - [x] Phase 3 — Networking
 - [x] Phase 4 — IAM & security
-- [ ] Phase 5 — Data infrastructure
+- [x] Phase 5 — Data infrastructure
 - [ ] Phase 6 — Messaging
 - [ ] Phase 7 — Compute
 - [ ] Phase 8 — Observability

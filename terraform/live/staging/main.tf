@@ -59,5 +59,49 @@ module "iam" {
   state_bucket_arn = local.state_bucket_arn
   lock_table_arn   = local.lock_table_arn
 
-  secret_arns = values(module.secrets.secret_arns)
+  secret_arns = concat(
+    values(module.secrets.secret_arns),
+    [module.rds.master_user_secret_arn, module.redis.auth_token_secret_arn],
+  )
+  app_s3_bucket_arns    = values(module.object_storage.bucket_arns)
+  backup_s3_bucket_arns = [module.object_storage.bucket_arns["backups"]]
+}
+
+module "object_storage" {
+  source = "../../modules/object-storage"
+
+  project     = var.project
+  environment = var.environment
+  kms_key_arn = module.kms.backups_key_arn
+}
+
+module "rds" {
+  source = "../../modules/rds"
+
+  project             = var.project
+  environment         = var.environment
+  subnet_ids          = module.networking.data_subnet_ids
+  security_group_id   = module.security_groups.postgres_security_group_id
+  storage_kms_key_arn = module.kms.database_key_arn
+  secrets_kms_key_arn = module.kms.secrets_key_arn
+
+  instance_class          = var.rds_instance_class
+  multi_az                = var.rds_multi_az
+  deletion_protection     = var.rds_deletion_protection
+  skip_final_snapshot     = var.rds_skip_final_snapshot
+  backup_retention_period = var.rds_backup_retention_period
+}
+
+module "redis" {
+  source = "../../modules/redis"
+
+  project             = var.project
+  environment         = var.environment
+  subnet_ids          = module.networking.data_subnet_ids
+  security_group_id   = module.security_groups.redis_security_group_id
+  secrets_kms_key_arn = module.kms.secrets_key_arn
+
+  node_type                  = var.redis_node_type
+  num_cache_clusters         = var.redis_num_cache_clusters
+  automatic_failover_enabled = var.redis_automatic_failover_enabled
 }

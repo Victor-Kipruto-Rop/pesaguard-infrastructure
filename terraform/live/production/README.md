@@ -8,8 +8,8 @@ Root Terraform configuration for the `production` environment. Instantiates:
   dev/staging are expected to reuse it for subdomains once Phase 7 adds
   records)
 
-Not yet instantiated here (added as their phases land): RDS, Redis, Kafka,
-compute, load balancer, observability stack.
+Not yet instantiated here (added as their phases land): Kafka, compute,
+load balancer, observability stack.
 
 ## Usage
 

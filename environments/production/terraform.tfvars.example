@@ -19,7 +19,19 @@ create_dns_zone = true
 github_org          = "Victor-Kipruto-Rop"
 github_repo         = "pesaguard-infrastructure"
 allowed_github_refs = ["ref:refs/heads/main"]
-secret_names        = ["database/credentials", "redis/auth-token", "kafka/credentials"]
+secret_names        = ["kafka/credentials"]  # database + redis credentials are self-managed by their own modules (RDS-managed secret; redis module-generated auth token)
+
+# Data infrastructure (Phase 5) -- Multi-AZ, deletion-protected, longer
+# retention for production
+rds_instance_class          = "db.r6g.large"
+rds_multi_az                = true
+rds_deletion_protection     = true
+rds_skip_final_snapshot     = false
+rds_backup_retention_period = 30
+
+redis_node_type                  = "cache.r6g.large"
+redis_num_cache_clusters         = 2
+redis_automatic_failover_enabled = true
 
 # Added by later phases as the corresponding modules land:
-# (RDS, Redis, Kafka, compute, observability variables)
+# (Kafka, compute, observability variables)

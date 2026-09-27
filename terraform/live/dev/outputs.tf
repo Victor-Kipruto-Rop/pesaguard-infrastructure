@@ -70,3 +70,23 @@ output "app_service_instance_profile_name" {
 output "monitoring_instance_profile_name" {
   value = module.iam.monitoring_instance_profile_name
 }
+
+output "rds_endpoint" {
+  value = module.rds.endpoint
+}
+
+output "rds_master_user_secret_arn" {
+  value = module.rds.master_user_secret_arn
+}
+
+output "redis_primary_endpoint" {
+  value = module.redis.primary_endpoint_address
+}
+
+output "redis_auth_token_secret_arn" {
+  value = module.redis.auth_token_secret_arn
+}
+
+output "object_storage_bucket_names" {
+  value = module.object_storage.bucket_names
+}

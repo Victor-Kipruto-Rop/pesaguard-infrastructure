@@ -55,3 +55,43 @@ variable "secret_names" {
   type        = list(string)
   default     = ["database/credentials", "redis/auth-token", "kafka/credentials"]
 }
+
+variable "rds_instance_class" {
+  type    = string
+  default = "db.t4g.micro"
+}
+
+variable "rds_multi_az" {
+  type    = bool
+  default = false
+}
+
+variable "rds_deletion_protection" {
+  type    = bool
+  default = false
+}
+
+variable "rds_skip_final_snapshot" {
+  type    = bool
+  default = true
+}
+
+variable "rds_backup_retention_period" {
+  type    = number
+  default = 3
+}
+
+variable "redis_node_type" {
+  type    = string
+  default = "cache.t4g.micro"
+}
+
+variable "redis_num_cache_clusters" {
+  type    = number
+  default = 1
+}
+
+variable "redis_automatic_failover_enabled" {
+  type    = bool
+  default = false
+}

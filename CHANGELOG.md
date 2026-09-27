@@ -5,6 +5,52 @@ grouped by implementation phase. This log reflects what has actually been
 implemented and validated — not what is planned (see README.md for the
 phase roadmap).
 
+## [Unreleased] — Phase 5: Data Infrastructure
+
+### Added
+- `terraform/modules/object-storage/` — S3 buckets (`backups`, `artifacts`,
+  `logs` by default), each with versioning, SSE-KMS (the `backups` key),
+  full public-access block, a deny-insecure-transport bucket policy, and
+  lifecycle expiration of old versions.
+- `terraform/modules/rds/` — RDS PostgreSQL: gp3 encrypted storage with
+  autoscaling, `manage_master_user_password = true` (RDS/Secrets Manager
+  owns the master credential — Terraform never sees or sets it),
+  automated backups + PITR, Performance Insights, PostgreSQL log export,
+  `rds.force_ssl` enforced via a custom parameter group.
+- `terraform/modules/redis/` — ElastiCache Redis replication group:
+  at-rest + in-transit encryption, a Terraform-generated AUTH token
+  stored in a secret this module owns, configurable node count /
+  automatic failover.
+- `terraform/live/{dev,staging,production}/` wired to instantiate all
+  three, plus updated `iam` module calls so `app_service`'s secret/S3
+  permissions cover the new RDS master-password secret, the Redis
+  auth-token secret, and the new S3 buckets.
+- `environments/*/terraform.tfvars.example` updated: `secret_names`
+  trimmed to just `kafka/credentials` (database and Redis credentials are
+  now self-managed by their own modules, avoiding a Secrets Manager name
+  collision), plus per-environment RDS/Redis sizing (dev: single-AZ
+  `db.t4g.micro` / 1-node Redis; staging: single-AZ, one size up;
+  production: Multi-AZ `db.r6g.large`, deletion-protected, 2-node Redis
+  with automatic failover).
+
+### Not yet implemented
+- No Kafka/Redpanda or Schema Registry (Phase 6).
+- No compute (Phase 7) — nothing yet connects to these databases.
+- No CloudWatch alarms on RDS/Redis metrics (deferred to Phase 8 so
+  alerting has somewhere real to send notifications, rather than SNS
+  topics with no subscriber).
+- No automated, tested restore drill (Phase 10) — the RPO/RTO figures in
+  `terraform/modules/rds/README.md` are AWS platform defaults, not yet
+  measured for this project.
+
+### Requires manual action / AWS credentials
+- Applying any `terraform/live/<env>` config now provisions billable
+  resources (RDS, ElastiCache, S3) — review `terraform plan` output
+  carefully, especially for production.
+- After first apply, verify RDS/Redis credentials are reachable only via
+  their respective Secrets Manager ARNs by the `app_service` role — no
+  credential is ever written to a Terraform output value in plaintext.
+
 ## [Unreleased] — Phase 4: IAM & Security
 
 ### Added

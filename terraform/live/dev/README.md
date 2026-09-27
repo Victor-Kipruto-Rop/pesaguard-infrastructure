@@ -7,9 +7,12 @@ Root Terraform configuration for the `development` environment. Instantiates:
 - `../../modules/kms` — secrets/logs/backups/database encryption keys
 - `../../modules/secrets` — Secrets Manager containers (values set out-of-band)
 - `../../modules/iam` — CI/CD, app-service, monitoring, backup-operator roles
+- `../../modules/object-storage` — S3 buckets (backups/artifacts/logs)
+- `../../modules/rds` — PostgreSQL (Multi-AZ per env config, RDS-managed master password)
+- `../../modules/redis` — ElastiCache Redis (Terraform-generated AUTH token)
 
 Not yet instantiated here (added as their phases land): DNS record wiring,
-RDS, Redis, Kafka, compute, load balancer, observability stack.
+Kafka, compute, load balancer, observability stack.
 
 ## Manual step after production's `iam` module is applied
 

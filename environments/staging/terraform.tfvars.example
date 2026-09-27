@@ -13,5 +13,11 @@ availability_zones = ["us-east-1a", "us-east-1b"]
 # adds a staging.pesaguard.* subdomain record in production's zone.
 # domain_name = ""
 
+# IAM / OIDC / Secrets (Phase 4)
+github_org          = "Victor-Kipruto-Rop"
+github_repo         = "pesaguard-infrastructure"
+allowed_github_refs = ["ref:refs/heads/main"]
+secret_names        = ["database/credentials", "redis/auth-token", "kafka/credentials"]
+
 # Added by later phases as the corresponding modules land:
 # (RDS, Redis, Kafka, compute, observability variables)

@@ -31,3 +31,27 @@ variable "domain_name" {
   type        = string
   default     = ""
 }
+
+variable "github_org" {
+  description = "GitHub organization/user owning the infrastructure repo."
+  type        = string
+  default     = "Victor-Kipruto-Rop"
+}
+
+variable "github_repo" {
+  description = "GitHub repository name."
+  type        = string
+  default     = "pesaguard-infrastructure"
+}
+
+variable "allowed_github_refs" {
+  description = "Git refs allowed to assume the CI/CD role via OIDC for this environment."
+  type        = list(string)
+  default     = ["ref:refs/heads/main", "ref:refs/heads/develop"]
+}
+
+variable "secret_names" {
+  description = "Secret container names to create for this environment (see modules/secrets)."
+  type        = list(string)
+  default     = ["database/credentials", "redis/auth-token", "kafka/credentials"]
+}

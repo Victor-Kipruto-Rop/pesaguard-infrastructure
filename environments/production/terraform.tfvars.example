@@ -14,5 +14,12 @@ availability_zones = ["us-east-1a", "us-east-1b", "us-east-1c"]
 domain_name     = "pesaguard.victorkipruto.com"
 create_dns_zone = true
 
+# IAM / OIDC / Secrets (Phase 4) -- production creates the account-wide
+# GitHub OIDC provider; restrict its role to the protected branch only.
+github_org          = "Victor-Kipruto-Rop"
+github_repo         = "pesaguard-infrastructure"
+allowed_github_refs = ["ref:refs/heads/main"]
+secret_names        = ["database/credentials", "redis/auth-token", "kafka/credentials"]
+
 # Added by later phases as the corresponding modules land:
 # (RDS, Redis, Kafka, compute, observability variables)

@@ -37,3 +37,35 @@ output "kafka_security_group_id" {
 output "monitoring_security_group_id" {
   value = module.security_groups.monitoring_security_group_id
 }
+
+output "secrets_kms_key_arn" {
+  value = module.kms.secrets_key_arn
+}
+
+output "logs_kms_key_arn" {
+  value = module.kms.logs_key_arn
+}
+
+output "backups_kms_key_arn" {
+  value = module.kms.backups_key_arn
+}
+
+output "database_kms_key_arn" {
+  value = module.kms.database_key_arn
+}
+
+output "secret_arns" {
+  value = module.secrets.secret_arns
+}
+
+output "terraform_ci_role_arn" {
+  value = module.iam.terraform_ci_role_arn
+}
+
+output "app_service_instance_profile_name" {
+  value = module.iam.app_service_instance_profile_name
+}
+
+output "monitoring_instance_profile_name" {
+  value = module.iam.monitoring_instance_profile_name
+}

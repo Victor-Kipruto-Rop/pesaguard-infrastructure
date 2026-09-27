@@ -46,3 +46,44 @@ output "dns_name_servers" {
   description = "Delegate the domain at your registrar to these name servers."
   value       = module.dns.name_servers
 }
+
+output "secrets_kms_key_arn" {
+  value = module.kms.secrets_key_arn
+}
+
+output "logs_kms_key_arn" {
+  value = module.kms.logs_key_arn
+}
+
+output "backups_kms_key_arn" {
+  value = module.kms.backups_key_arn
+}
+
+output "database_kms_key_arn" {
+  value = module.kms.database_key_arn
+}
+
+output "secret_arns" {
+  value = module.secrets.secret_arns
+}
+
+output "oidc_provider_arn" {
+  description = "Pass this into dev/staging's existing_oidc_provider_arn variable."
+  value       = module.iam.oidc_provider_arn
+}
+
+output "terraform_ci_role_arn" {
+  value = module.iam.terraform_ci_role_arn
+}
+
+output "app_service_instance_profile_name" {
+  value = module.iam.app_service_instance_profile_name
+}
+
+output "monitoring_instance_profile_name" {
+  value = module.iam.monitoring_instance_profile_name
+}
+
+output "backup_operator_role_arn" {
+  value = module.iam.backup_operator_role_arn
+}

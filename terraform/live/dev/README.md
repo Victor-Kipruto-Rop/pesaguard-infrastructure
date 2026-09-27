@@ -4,9 +4,20 @@ Root Terraform configuration for the `development` environment. Instantiates:
 
 - `../../modules/networking` — VPC, subnets, NAT (single, shared), flow logs
 - `../../modules/security-groups` — least-privilege SGs for ALB/app/data/monitoring
+- `../../modules/kms` — secrets/logs/backups/database encryption keys
+- `../../modules/secrets` — Secrets Manager containers (values set out-of-band)
+- `../../modules/iam` — CI/CD, app-service, monitoring, backup-operator roles
 
-Not yet instantiated here (added as their phases land): DNS zone, RDS,
-Redis, Kafka, compute, load balancer, observability stack.
+Not yet instantiated here (added as their phases land): DNS record wiring,
+RDS, Redis, Kafka, compute, load balancer, observability stack.
+
+## Manual step after production's `iam` module is applied
+
+This environment does **not** create the account-wide GitHub OIDC
+provider (`create_oidc_provider = false`) — production does. After
+applying `terraform/live/production`, copy its `oidc_provider_arn` output
+into this file's `existing_oidc_provider_arn` (currently empty) before
+`terraform_ci_role_arn` here will actually work for GitHub Actions.
 
 ## Usage
 

@@ -5,6 +5,59 @@ grouped by implementation phase. This log reflects what has actually been
 implemented and validated — not what is planned (see README.md for the
 phase roadmap).
 
+## [Unreleased] — Phase 4: IAM & Security
+
+### Added
+- `terraform/modules/kms/` — four KMS keys (secrets, logs, backups,
+  database), each with rotation enabled, an alias, and a policy granting
+  the account root plus optional named administrators; the logs key
+  additionally grants the CloudWatch Logs service principal, scoped by
+  encryption-context condition to this project/environment's log groups.
+- `terraform/modules/iam/` — GitHub Actions OIDC provider (created once,
+  by production; other environments reference its ARN), a `terraform_ci`
+  role scoped to what this repo's modules currently manage (state
+  bucket/lock table, networking, Route 53, KMS, IAM under the project
+  prefix, Secrets Manager under the project/environment prefix,
+  CloudWatch Logs under `/pesaguard/<env>/*`), an `app_service` role +
+  instance profile (SSM-only admin access, secrets/log/metric
+  permissions), a `monitoring` role + instance profile (read-only), and a
+  `backup_operator` role (RDS snapshot + KMS permissions).
+- `terraform/modules/secrets/` — Secrets Manager containers for
+  database/redis/kafka credentials, encrypted with the KMS secrets key.
+  Terraform writes a random placeholder value once (so the secret isn't
+  left unusable) and then ignores further changes to it — real values are
+  always set out-of-band, never generated from or committed to this repo.
+- `terraform/live/{dev,staging,production}/` wired to instantiate `kms`,
+  `secrets`, and `iam` (production also sets `create_oidc_provider = true`
+  since it owns the account-wide OIDC provider).
+- `security/` — `management-access.md` (why no SSH; SSM Session Manager;
+  OIDC summary), `host-hardening.md` (EC2 checklist for Phase 7),
+  `container-security.md` (image/container checklist for Phase 6/7).
+- `environments/*/terraform.tfvars.example` updated with `github_org`,
+  `github_repo`, `allowed_github_refs`, `secret_names`.
+
+### Not yet implemented
+- No RDS/Redis/Kafka to actually attach these keys/roles/secrets to yet
+  (Phase 5/6) — the IAM policies reference resource-name patterns those
+  phases will create, not real ARNs.
+- No compute (Phase 7) — the `app_service`/`monitoring` instance profiles
+  exist but nothing assumes them yet.
+- `terraform_ci`'s policy will need expanding as later phases add
+  services it must manage (RDS, ElastiCache, ECS, etc.) — it is
+  intentionally scoped to Phases 1–4 only right now, not a blanket
+  `AdministratorAccess`.
+- No GuardDuty/Security Hub/Config (left for a later hardening pass —
+  see Phase 11 in the README roadmap).
+
+### Requires manual action
+- Apply `terraform/live/production` first (or at least its `iam` module)
+  to create the GitHub OIDC provider before dev/staging's CI roles are
+  usable — then copy production's `oidc_provider_arn` output into
+  dev/staging's `existing_oidc_provider_arn` variable.
+- Set real values in every Secrets Manager container created here (AWS
+  Console or CLI — see `security/management-access.md`); Terraform never
+  writes a real credential.
+
 ## [Unreleased] — Phase 3: Networking
 
 ### Added

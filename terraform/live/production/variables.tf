@@ -36,3 +36,27 @@ variable "create_dns_zone" {
   type        = bool
   default     = true
 }
+
+variable "github_org" {
+  description = "GitHub organization/user owning the infrastructure repo."
+  type        = string
+  default     = "Victor-Kipruto-Rop"
+}
+
+variable "github_repo" {
+  description = "GitHub repository name."
+  type        = string
+  default     = "pesaguard-infrastructure"
+}
+
+variable "allowed_github_refs" {
+  description = "Git refs allowed to assume production's CI/CD role via OIDC. Kept to protected branches only."
+  type        = list(string)
+  default     = ["ref:refs/heads/main"]
+}
+
+variable "secret_names" {
+  description = "Secret container names to create for this environment (see modules/secrets)."
+  type        = list(string)
+  default     = ["database/credentials", "redis/auth-token", "kafka/credentials"]
+}

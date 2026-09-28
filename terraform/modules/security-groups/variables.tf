@@ -49,13 +49,13 @@ variable "redis_port" {
 }
 
 variable "kafka_ports" {
-  description = "Kafka/Redpanda broker ports (plaintext and TLS listeners)."
+  description = "MSK broker ports. 9098 = TLS + IAM client authentication (the only auth mode this repo's MSK module enables — see terraform/modules/msk/README.md). 9092/9094/9096 are not opened since plaintext, TLS-only, and SASL/SCRAM auth are not used here."
   type        = list(number)
-  default     = [9092, 9093]
+  default     = [9098]
 }
 
 variable "schema_registry_port" {
-  description = "Schema Registry port."
+  description = "Unused: schema registry is AWS Glue Schema Registry (regional AWS API + optional interface VPC endpoint on 443, provisioned in terraform/modules/glue-schema-registry/) rather than a self-hosted service on this port. Kept for backward compatibility; not referenced by any resource in this module."
   type        = number
   default     = 8081
 }

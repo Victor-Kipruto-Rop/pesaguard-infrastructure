@@ -22,4 +22,14 @@ locals {
   app_s3_resources     = length(var.app_s3_bucket_arns) > 0 ? flatten([for b in var.app_s3_bucket_arns : [b, "${b}/*"]]) : []
   backup_s3_resources  = length(var.backup_s3_bucket_arns) > 0 ? flatten([for b in var.backup_s3_bucket_arns : [b, "${b}/*"]]) : []
   secret_resources     = length(var.secret_arns) > 0 ? var.secret_arns : []
+
+  # MSK IAM resource ARNs are derived from the cluster ARN:
+  #   cluster: arn:aws:kafka:<region>:<acct>:cluster/<name>/<uuid>
+  #   topic:   arn:aws:kafka:<region>:<acct>:topic/<name>/<uuid>/<topic>
+  #   group:   arn:aws:kafka:<region>:<acct>:group/<name>/<uuid>/<group>
+  msk_topic_arn_prefix = replace(var.msk_cluster_arn, ":cluster/", ":topic/")
+  msk_group_arn_prefix = replace(var.msk_cluster_arn, ":cluster/", ":group/")
+
+  # Glue schema ARNs: arn:aws:glue:<region>:<acct>:schema/<registry>/<schema>
+  glue_schema_arn_prefix = replace(var.glue_registry_arn, ":registry/", ":schema/")
 }

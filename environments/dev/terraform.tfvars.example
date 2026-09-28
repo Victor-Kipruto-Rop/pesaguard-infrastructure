@@ -30,5 +30,11 @@ redis_node_type                  = "cache.t4g.micro"
 redis_num_cache_clusters         = 1
 redis_automatic_failover_enabled = false
 
+# Messaging (Phase 6) -- MSK. number_of_broker_nodes must be a multiple of
+# the number of AZs/subnets. 2 brokers (one per AZ). Run apply-topics.sh with REPLICATION_FACTOR_CAP=2.
+msk_broker_instance_type   = "kafka.t3.small"
+msk_number_of_broker_nodes = 2
+msk_broker_ebs_volume_size = 50
+
 # Added by later phases as the corresponding modules land:
-# (Kafka, compute, observability variables)
+# (compute, observability variables)

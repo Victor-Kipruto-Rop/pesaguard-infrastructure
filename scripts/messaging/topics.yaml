@@ -1,0 +1,73 @@
+# Kafka topic manifest for PesaGuard.
+#
+# Applied by ./apply-topics.sh against the MSK cluster's IAM-auth
+# bootstrap brokers (terraform/modules/msk output: bootstrap_brokers_sasl_iam).
+# This file is infrastructure configuration, not application code: topic
+# names, partition counts, and retention live here; message schemas live
+# in the Glue Schema Registry (registered by the owning application repo)
+# and business logic for producing/consuming lives in application repos.
+#
+# Every primary topic listed under `topics` automatically gets two
+# companion topics created alongside it (see apply-topics.sh):
+#   <name>-retry  — for consumers to republish a failed message for one
+#                   more attempt after a backoff, before giving up
+#   <name>-dlq    — terminal failures land here for manual/automated
+#                   investigation; replay tooling (not yet implemented —
+#                   see README.md) must be idempotency-safe before
+#                   anything replays from here into a primary topic
+#
+# cleanup_policy: "delete" (time/size-based retention) or "compact"
+# (keep latest value per key — e.g. for a topic used as a changelog).
+
+topics:
+  - name: transactions
+    partitions: 12
+    replication_factor: 3
+    retention_ms: 604800000 # 7 days
+    cleanup_policy: delete
+
+  - name: transaction-events
+    partitions: 12
+    replication_factor: 3
+    retention_ms: 604800000 # 7 days
+    cleanup_policy: delete
+
+  - name: reconciliation
+    partitions: 6
+    replication_factor: 3
+    retention_ms: 1209600000 # 14 days
+    cleanup_policy: delete
+
+  - name: fraud-events
+    partitions: 6
+    replication_factor: 3
+    retention_ms: 2592000000 # 30 days — longer for investigation window
+    cleanup_policy: delete
+
+  - name: alerts
+    partitions: 3
+    replication_factor: 3
+    retention_ms: 604800000 # 7 days
+    cleanup_policy: delete
+
+  - name: notifications
+    partitions: 6
+    replication_factor: 3
+    retention_ms: 259200000 # 3 days
+    cleanup_policy: delete
+
+  - name: audit-events
+    partitions: 6
+    replication_factor: 3
+    retention_ms: 7776000000 # 90 days — compliance/audit trail
+    cleanup_policy: delete
+
+  - name: webhooks
+    partitions: 6
+    replication_factor: 3
+    retention_ms: 259200000 # 3 days
+    cleanup_policy: delete
+
+# Topics that should NOT get -retry/-dlq companions (infrastructure/
+# internal topics, not business events with a consumer failure path).
+no_dlq_companions: []

@@ -108,6 +108,30 @@ variable "secret_arns" {
   default     = []
 }
 
+variable "enable_msk_access" {
+  description = "Whether to grant the app_service role MSK data-plane access. A plain bool (not derived from msk_cluster_arn) because the ARN is unknown at plan time on first apply and cannot gate a for_each."
+  type        = bool
+  default     = false
+}
+
+variable "msk_cluster_arn" {
+  description = "MSK cluster ARN. Required when enable_msk_access is true."
+  type        = string
+  default     = ""
+}
+
+variable "enable_glue_registry_access" {
+  description = "Whether to grant the app_service role Glue Schema Registry access. A plain bool for the same plan-time reason as enable_msk_access."
+  type        = bool
+  default     = false
+}
+
+variable "glue_registry_arn" {
+  description = "Glue Schema Registry ARN. Required when enable_glue_registry_access is true."
+  type        = string
+  default     = ""
+}
+
 variable "cost_center" {
   description = "Cost center tag."
   type        = string

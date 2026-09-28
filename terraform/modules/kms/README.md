@@ -1,6 +1,6 @@
 # kms
 
-Creates four separate customer-managed KMS keys per environment, each with
+Creates five separate customer-managed KMS keys per environment, each with
 automatic annual rotation enabled and a `deletion_window_in_days` safety
 window:
 
@@ -10,6 +10,7 @@ window:
 | `logs` | CloudWatch Logs encryption | `alias/<project>-<env>-logs` |
 | `backups` | S3 backup buckets, RDS/DB snapshots | `alias/<project>-<env>-backups` |
 | `database` | RDS/Redis storage-at-rest encryption | `alias/<project>-<env>-database` |
+| `messaging` | MSK broker storage encryption | `alias/<project>-<env>-messaging` |
 
 Separate keys per purpose mean a compromised or over-broadly-granted role
 for one purpose (say, reading backups) cannot also decrypt secrets or
@@ -39,8 +40,8 @@ module dependency.
 
 ## Inputs / outputs
 
-See `variables.tf` / `outputs.tf`. All four key ARNs/IDs are output for
-use by other modules (`iam`, and later RDS/Redis/S3/logging modules).
+See `variables.tf` / `outputs.tf`. All five key ARNs/IDs are output for
+use by other modules (`iam`, and RDS/Redis/S3/MSK).
 
 ## Example
 

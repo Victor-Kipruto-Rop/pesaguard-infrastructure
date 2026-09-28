@@ -130,17 +130,17 @@ resource "aws_security_group" "redis" {
   })
 }
 
-# Kafka / Redpanda + Schema Registry ----------------------------------------
+# Kafka (MSK) ------------------------------------------------------------
 
 resource "aws_security_group" "kafka" {
   name        = "${local.name_prefix}-kafka"
-  description = "Kafka/Redpanda brokers + Schema Registry: ingress from app tier and broker-to-broker, no internet route."
+  description = "MSK brokers: TLS+IAM ingress from app tier and broker-to-broker, no internet route. Schema Registry is AWS Glue (regional API, not a port on this group)."
   vpc_id      = var.vpc_id
 
   dynamic "ingress" {
     for_each = var.kafka_ports
     content {
-      description     = "Kafka broker port ${ingress.value} from app tier"
+      description     = "MSK broker port ${ingress.value} from app tier"
       from_port       = ingress.value
       to_port         = ingress.value
       protocol        = "tcp"
@@ -154,14 +154,6 @@ resource "aws_security_group" "kafka" {
     to_port     = 0
     protocol    = "-1"
     self        = true
-  }
-
-  ingress {
-    description     = "Schema Registry from app tier"
-    from_port       = var.schema_registry_port
-    to_port         = var.schema_registry_port
-    protocol        = "tcp"
-    security_groups = [aws_security_group.app.id]
   }
 
   egress {

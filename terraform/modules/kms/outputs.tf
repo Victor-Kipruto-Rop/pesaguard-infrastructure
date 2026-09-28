@@ -29,3 +29,11 @@ output "database_key_id" {
 output "database_key_arn" {
   value = aws_kms_key.database.arn
 }
+
+output "messaging_key_id" {
+  value = aws_kms_key.messaging.key_id
+}
+
+output "messaging_key_arn" {
+  value = aws_kms_key.messaging.arn
+}

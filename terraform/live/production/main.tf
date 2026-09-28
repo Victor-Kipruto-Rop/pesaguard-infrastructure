@@ -70,6 +70,38 @@ module "iam" {
   )
   app_s3_bucket_arns    = values(module.object_storage.bucket_arns)
   backup_s3_bucket_arns = [module.object_storage.bucket_arns["backups"]]
+
+  # Booleans are literals (known at plan time); the ARNs are not.
+  enable_msk_access           = true
+  msk_cluster_arn             = module.msk.cluster_arn
+  enable_glue_registry_access = true
+  glue_registry_arn           = module.glue_schema_registry.registry_arn
+}
+
+module "msk" {
+  source = "../../modules/msk"
+
+  project           = var.project
+  environment       = var.environment
+  subnet_ids        = module.networking.data_subnet_ids
+  security_group_id = module.security_groups.kafka_security_group_id
+  kms_key_arn       = module.kms.messaging_key_arn
+  logs_kms_key_arn  = module.kms.logs_key_arn
+
+  broker_instance_type   = var.msk_broker_instance_type
+  number_of_broker_nodes = var.msk_number_of_broker_nodes
+  broker_ebs_volume_size = var.msk_broker_ebs_volume_size
+}
+
+module "glue_schema_registry" {
+  source = "../../modules/glue-schema-registry"
+
+  project               = var.project
+  environment           = var.environment
+  vpc_id                = module.networking.vpc_id
+  vpc_cidr_block        = module.networking.vpc_cidr_block
+  subnet_ids            = module.networking.app_subnet_ids
+  app_security_group_id = module.security_groups.app_security_group_id
 }
 
 module "object_storage" {

@@ -10,14 +10,29 @@ workloads assume roles via their EC2 instance profile or ECS task role.
 | Role | Assumed by | Purpose |
 |---|---|---|
 | `<project>-<env>-terraform-ci` | GitHub Actions (OIDC) | `terraform plan`/`apply` from CI, scoped to this repo + allowed refs |
-| `<project>-<env>-app-service` | `ecs-tasks.amazonaws.com` or `ec2.amazonaws.com` | FastAPI/Java services/workers: read secrets, decrypt secrets/logs keys, write logs, publish metrics |
+| `<project>-<env>-app-service` | `ecs-tasks.amazonaws.com` or `ec2.amazonaws.com` | FastAPI/Java services/workers: read secrets, decrypt secrets/logs keys, write logs, publish metrics; optionally MSK data-plane access (`enable_msk_access`) and Glue Schema Registry access (`enable_glue_registry_access`) |
 | `<project>-<env>-monitoring` | `ecs-tasks.amazonaws.com` or `ec2.amazonaws.com` | Prometheus/Grafana/Alertmanager: describe EC2 for service discovery, read CloudWatch metrics/logs |
 | `<project>-<env>-backup-operator` | `backup.amazonaws.com`, `events.amazonaws.com` | Scheduled snapshot/backup automation |
 
 `app_service` and `monitoring` also get an **instance profile** (for the
 EC2 compute path) and the AWS-managed `AmazonSSMManagedInstanceCore`
 policy, so Session Manager works without any inbound SSH security group
-rule (see `../../../security/policies/host-hardening.md`).
+rule (see `../../../security/host-hardening.md`).
+
+## MSK and Glue access (optional, flag-gated)
+
+`enable_msk_access` grants `app_service` `kafka-cluster:Connect`,
+`DescribeCluster`, `DescribeTopic`, `ReadData`, `WriteData`, `AlterGroup`,
+and `DescribeGroup` on the given cluster's topics and consumer groups. It
+deliberately **omits** `CreateTopic`/`DeleteTopic`/`AlterTopic` — topic
+lifecycle is an operator action (`scripts/messaging/apply-topics.sh`).
+`enable_glue_registry_access` grants schema read/register actions scoped to
+one registry and its schemas, not `glue:*`.
+
+These are separate booleans rather than being inferred from whether the
+ARN variable is set, because the ARNs are unknown at plan time on a first
+apply and Terraform cannot use an unknown value to decide whether a
+`for_each` statement exists.
 
 ## GitHub OIDC
 

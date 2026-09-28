@@ -33,5 +33,11 @@ redis_node_type                  = "cache.r6g.large"
 redis_num_cache_clusters         = 2
 redis_automatic_failover_enabled = true
 
+# Messaging (Phase 6) -- MSK. number_of_broker_nodes must be a multiple of
+# the number of AZs/subnets. 3 brokers, one per AZ (needs 3 entries in availability_zones). Manifest RF=3 applies as written.
+msk_broker_instance_type   = "kafka.m5.large"
+msk_number_of_broker_nodes = 3
+msk_broker_ebs_volume_size = 500
+
 # Added by later phases as the corresponding modules land:
-# (Kafka, compute, observability variables)
+# (compute, observability variables)

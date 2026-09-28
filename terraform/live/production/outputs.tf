@@ -107,3 +107,16 @@ output "redis_auth_token_secret_arn" {
 output "object_storage_bucket_names" {
   value = module.object_storage.bucket_names
 }
+
+output "msk_cluster_arn" {
+  value = module.msk.cluster_arn
+}
+
+output "msk_bootstrap_brokers_sasl_iam" {
+  description = "Use as BOOTSTRAP_SERVERS for scripts/messaging/apply-topics.sh."
+  value       = module.msk.bootstrap_brokers_sasl_iam
+}
+
+output "glue_schema_registry_name" {
+  value = module.glue_schema_registry.registry_name
+}

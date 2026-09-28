@@ -10,7 +10,7 @@ Internet
   ALB SG
    |  app_port, SG-to-SG only
   App SG -----------------------------------+
-   |  postgres_port          |  redis_port  |  kafka_ports, schema_registry_port
+   |  postgres_port          |  redis_port  |  kafka_ports (MSK, TLS+IAM)
 Postgres SG               Redis SG        Kafka SG
 (no internet egress)    (no internet egress) (no internet egress)
 
@@ -26,7 +26,7 @@ the internet); egress open for external alert notifications.
 | `app` | `app_port` from `alb`; all ports from itself (service-to-service) | `0.0.0.0/0` (NAT-routed — needed for external APIs, S3, RDS, Redis, Kafka) |
 | `postgres` | `postgres_port` from `app` | VPC CIDR only |
 | `redis` | `redis_port` from `app` | VPC CIDR only |
-| `kafka` | `kafka_ports` + `schema_registry_port` from `app`; broker-to-broker from itself | VPC CIDR only |
+| `kafka` | `kafka_ports` (MSK TLS+IAM, port 9098) from `app`; broker-to-broker from itself | VPC CIDR only |
 | `monitoring` | `monitoring_ports` from VPC CIDR only (not from ALB) | `0.0.0.0/0` (alert notification integrations) |
 
 No `0.0.0.0/0` is used for service-to-service communication — only the ALB's
@@ -45,7 +45,8 @@ source CIDR — do not reuse the `app` security group for it.
 ## Inputs / outputs
 
 See `variables.tf` / `outputs.tf`. Ports (`app_port`, `postgres_port`,
-`redis_port`, `kafka_ports`, `schema_registry_port`, `monitoring_ports`)
+`redis_port`, `kafka_ports`, `monitoring_ports`). `schema_registry_port` is unused —
+see `terraform/modules/glue-schema-registry/README.md`.
 are all variables — no port numbers are hard-coded outside this module's
 defaults.
 

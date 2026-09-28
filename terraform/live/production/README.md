@@ -7,8 +7,17 @@ Root Terraform configuration for the `production` environment. Instantiates:
 - `../../modules/dns` — the apex Route 53 hosted zone (production owns it;
   dev/staging are expected to reuse it for subdomains once Phase 7 adds
   records)
+- `../../modules/kms` — secrets/logs/backups/database/messaging encryption keys
+- `../../modules/secrets` — Secrets Manager containers (values set out-of-band)
+- `../../modules/iam` — CI/CD, app-service, monitoring, backup-operator roles;
+  **production creates the account-wide GitHub OIDC provider**
+- `../../modules/object-storage` — S3 buckets (backups/artifacts/logs)
+- `../../modules/rds` — PostgreSQL (Multi-AZ, deletion-protected, RDS-managed master password)
+- `../../modules/redis` — ElastiCache Redis (2 nodes, automatic failover, Terraform-generated AUTH token)
+- `../../modules/msk` — Amazon MSK (3 brokers, IAM auth only, TLS, KMS-encrypted); topics via `scripts/messaging/`
+- `../../modules/glue-schema-registry` — AWS Glue Schema Registry (+ private interface endpoint)
 
-Not yet instantiated here (added as their phases land): Kafka, compute,
+Not yet instantiated here (added as their phases land): compute,
 load balancer, observability stack.
 
 ## Usage

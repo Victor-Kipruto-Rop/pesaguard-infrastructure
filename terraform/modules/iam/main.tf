@@ -139,8 +139,120 @@ data "aws_iam_policy_document" "terraform_ci" {
   statement {
     sid       = "CloudWatchLogsManagement"
     effect    = "Allow"
-    actions   = ["logs:CreateLogGroup", "logs:DeleteLogGroup", "logs:DescribeLogGroups", "logs:PutRetentionPolicy", "logs:TagResource", "logs:ListTagsForResource"]
+    actions   = ["logs:CreateLogGroup", "logs:DeleteLogGroup", "logs:DescribeLogGroups", "logs:PutRetentionPolicy", "logs:TagResource", "logs:ListTagsForResource", "logs:AssociateKmsKey", "logs:DisassociateKmsKey"]
     resources = ["arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:/pesaguard/${var.environment}/*"]
+  }
+
+  # --- Phase 5/6 services ------------------------------------------------
+  # Scoped by this project+environment name prefix wherever the service
+  # supports resource-level permissions. NOTE: RDS/ElastiCache lowercase
+  # resource names, S3 bucket names are lowercased by the object-storage
+  # module, MSK/Glue preserve case — hence the two prefixes below.
+  # This policy has not been exercised by a real CI apply; expect to add a
+  # missing action or two on first run (AccessDenied in the plan/apply log
+  # names it) — extend here deliberately rather than widening to service:*.
+
+  statement {
+    sid    = "ObjectStorageBuckets"
+    effect = "Allow"
+    actions = [
+      "s3:CreateBucket", "s3:DeleteBucket", "s3:ListBucket",
+      "s3:GetBucket*", "s3:PutBucket*", "s3:DeleteBucketPolicy",
+      "s3:GetLifecycleConfiguration", "s3:PutLifecycleConfiguration",
+      "s3:GetEncryptionConfiguration", "s3:PutEncryptionConfiguration",
+    ]
+    resources = ["arn:aws:s3:::${lower(var.project)}-${var.environment}-*"]
+  }
+
+  statement {
+    sid       = "RdsManagement"
+    effect    = "Allow"
+    actions   = ["rds:*"]
+    resources = ["arn:aws:rds:${var.region}:${data.aws_caller_identity.current.account_id}:*:${lower(var.project)}-${var.environment}-*"]
+  }
+
+  statement {
+    sid       = "ElastiCacheManagement"
+    effect    = "Allow"
+    actions   = ["elasticache:*"]
+    resources = ["arn:aws:elasticache:${var.region}:${data.aws_caller_identity.current.account_id}:*:${lower(var.project)}-${var.environment}-*"]
+  }
+
+  statement {
+    sid       = "MskManagementScoped"
+    effect    = "Allow"
+    actions   = ["kafka:*"]
+    resources = [
+      "arn:aws:kafka:${var.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.project}-${var.environment}-msk/*",
+      "arn:aws:kafka:${var.region}:${data.aws_caller_identity.current.account_id}:configuration/${var.project}-${var.environment}-msk-config/*",
+    ]
+  }
+
+  statement {
+    sid    = "GlueSchemaRegistryManagement"
+    effect = "Allow"
+    actions = [
+      "glue:CreateRegistry", "glue:DeleteRegistry", "glue:GetRegistry",
+      "glue:UpdateRegistry", "glue:TagResource", "glue:UntagResource", "glue:GetTags",
+    ]
+    resources = ["arn:aws:glue:${var.region}:${data.aws_caller_identity.current.account_id}:registry/${var.project}-${var.environment}-schemas"]
+  }
+
+  # Actions that do not support resource-level scoping (list/describe/create-
+  # before-an-ARN-exists). Read-only except the two Create* calls.
+  statement {
+    sid    = "DataServicesUnscopedActions"
+    effect = "Allow"
+    actions = [
+      "rds:Describe*", "rds:ListTagsForResource",
+      "elasticache:Describe*", "elasticache:ListTagsForResource",
+      "kafka:CreateCluster", "kafka:CreateConfiguration",
+      "kafka:Describe*", "kafka:List*", "kafka:GetBootstrapBrokers",
+      "glue:ListRegistries",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "NetworkInterfacesForManagedServices"
+    effect = "Allow"
+    actions = [
+      "ec2:CreateNetworkInterface", "ec2:DeleteNetworkInterface",
+      "ec2:ModifyNetworkInterfaceAttribute", "ec2:ModifyVpcEndpoint",
+    ]
+    resources = ["*"]
+  }
+
+  # Encrypted RDS/ElastiCache/MSK/S3/Secrets create KMS grants on the CMK
+  # using the caller's permissions. Limited to this environment's keys via
+  # their aliases (alias/<Project>-<env>-*).
+  statement {
+    sid    = "KmsUseForEncryptedResources"
+    effect = "Allow"
+    actions = [
+      "kms:CreateGrant", "kms:GenerateDataKey*", "kms:Decrypt",
+      "kms:Encrypt", "kms:ReEncrypt*", "kms:DescribeKey",
+    ]
+    resources = ["*"]
+    condition {
+      test     = "ForAnyValue:StringLike"
+      variable = "kms:ResourceAliases"
+      values   = ["alias/${var.project}-${var.environment}-*"]
+    }
+  }
+
+  # First use of RDS/ElastiCache/MSK in an account creates a service-linked
+  # role; only those three services, only the aws-service-role path.
+  statement {
+    sid       = "ServiceLinkedRoles"
+    effect    = "Allow"
+    actions   = ["iam:CreateServiceLinkedRole"]
+    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/*"]
+    condition {
+      test     = "StringEquals"
+      variable = "iam:AWSServiceName"
+      values   = ["rds.amazonaws.com", "elasticache.amazonaws.com", "kafka.amazonaws.com"]
+    }
   }
 }
 
@@ -231,6 +343,63 @@ data "aws_iam_policy_document" "app_service" {
       effect    = "Allow"
       actions   = ["s3:GetObject", "s3:PutObject", "s3:ListBucket"]
       resources = local.app_s3_resources
+    }
+  }
+
+  # MSK data-plane access (IAM auth). Deliberately excludes
+  # kafka-cluster:CreateTopic / DeleteTopic / AlterTopic: topic lifecycle is
+  # an operator action (scripts/messaging/apply-topics.sh), not something a
+  # runtime service — or an attacker who compromises one — should be able
+  # to do to financial event streams.
+  dynamic "statement" {
+    for_each = var.enable_msk_access ? [1] : []
+    content {
+      sid       = "MskConnect"
+      effect    = "Allow"
+      actions   = ["kafka-cluster:Connect", "kafka-cluster:DescribeCluster"]
+      resources = [var.msk_cluster_arn]
+    }
+  }
+
+  dynamic "statement" {
+    for_each = var.enable_msk_access ? [1] : []
+    content {
+      sid       = "MskTopicDataAccess"
+      effect    = "Allow"
+      actions   = ["kafka-cluster:DescribeTopic", "kafka-cluster:ReadData", "kafka-cluster:WriteData"]
+      resources = ["${local.msk_topic_arn_prefix}/*"]
+    }
+  }
+
+  dynamic "statement" {
+    for_each = var.enable_msk_access ? [1] : []
+    content {
+      sid       = "MskConsumerGroups"
+      effect    = "Allow"
+      actions   = ["kafka-cluster:AlterGroup", "kafka-cluster:DescribeGroup"]
+      resources = ["${local.msk_group_arn_prefix}/*"]
+    }
+  }
+
+  # Glue Schema Registry, scoped to this environment's registry and the
+  # schemas within it — not glue:* (Glue also covers ETL jobs/crawlers).
+  dynamic "statement" {
+    for_each = var.enable_glue_registry_access ? [1] : []
+    content {
+      sid = "GlueSchemaRegistry"
+      effect = "Allow"
+      actions = [
+        "glue:GetRegistry",
+        "glue:ListSchemas",
+        "glue:ListSchemaVersions",
+        "glue:GetSchema",
+        "glue:GetSchemaVersion",
+        "glue:GetSchemaByDefinition",
+        "glue:QuerySchemaVersionMetadata",
+        "glue:CreateSchema",
+        "glue:RegisterSchemaVersion",
+      ]
+      resources = [var.glue_registry_arn, "${local.glue_schema_arn_prefix}/*"]
     }
   }
 }

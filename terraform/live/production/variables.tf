@@ -100,3 +100,19 @@ variable "redis_automatic_failover_enabled" {
   type    = bool
   default = true
 }
+
+variable "msk_broker_instance_type" {
+  type    = string
+  default = "kafka.m5.large"
+}
+
+variable "msk_number_of_broker_nodes" {
+  description = "Must be a multiple of the number of AZs/subnets."
+  type        = number
+  default     = 3
+}
+
+variable "msk_broker_ebs_volume_size" {
+  type    = number
+  default = 500
+}

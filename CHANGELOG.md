@@ -5,6 +5,72 @@ grouped by implementation phase. This log reflects what has actually been
 implemented and validated — not what is planned (see README.md for the
 phase roadmap).
 
+## [Unreleased] — Phase 6: Messaging
+
+### Added
+- `terraform/modules/msk/` — Amazon MSK cluster: IAM-only client auth
+  (no plaintext, no SASL/SCRAM secrets), TLS in transit, KMS at rest
+  (new `messaging` key), broker logs to CloudWatch (logs key), enhanced
+  monitoring, and a broker config with `auto.create.topics.enable=false`
+  and `unclean.leader.election.enable=false`.
+- `terraform/modules/glue-schema-registry/` — AWS Glue Schema Registry
+  (registry container only; schemas are registered by application repos)
+  plus an optional private interface VPC endpoint with its own
+  security group.
+- `terraform/modules/kms/` — fifth key, `messaging`.
+- `scripts/messaging/topics.yaml` + `apply-topics.sh` — 8 primary topics,
+  each with `-retry` and `-dlq` companions (24 total). Dry run by
+  default (`APPLY=yes` required), create-only (`--if-not-exists`; never
+  alters or deletes a topic), DLQ retention never shorter than its
+  primary, `REPLICATION_FACTOR_CAP` for clusters with fewer than 3
+  brokers. ShellCheck clean; exercised in dry-run and missing-prereq
+  paths only.
+- `terraform/modules/iam/` — `app_service` gets MSK data-plane access
+  (Connect/Describe/Read/Write/consumer groups — deliberately **no**
+  Create/Delete/AlterTopic) and Glue registry access scoped to one
+  registry, behind boolean flags (`enable_msk_access`,
+  `enable_glue_registry_access`) because the ARNs are unknown at plan time
+  and cannot gate a `for_each`.
+- `terraform_ci` policy extended to cover the services Phases 5 and 6
+  introduced (S3 buckets, RDS, ElastiCache, MSK, Glue registry, KMS grants
+  scoped by key alias, service-linked roles). **This was a gap since
+  Phase 5**: before this change CI could not have applied RDS/Redis/S3.
+- `terraform/live/{dev,staging,production}/` wired with both modules;
+  per-env broker sizing in `environments/*/terraform.tfvars.example`
+  (dev/staging 2 brokers, production 3).
+
+### Changed
+- `security-groups`: `kafka_ports` default is now `[9098]` (MSK TLS+IAM)
+  instead of placeholder ports `[9092, 9093]`; the Schema Registry ingress
+  rule was removed (`schema_registry_port` is now unused — Glue is an AWS
+  API, not a port on this group).
+- Removed a broken doc link in `terraform/modules/iam/README.md`
+  (`security/policies/host-hardening.md` -> `security/host-hardening.md`).
+- Fixed `terraform/live/production/README.md`, which had silently missed
+  the Phase 4 and Phase 5 module list updates.
+
+### Not yet implemented
+- Consumer-lag and DLQ-growth alerting (Phase 8).
+- DLQ replay tooling. Replaying financial events without an agreed
+  idempotency contract risks duplicate transactions, so this is
+  intentionally not written yet.
+- Cross-region replication; multi-VPC/cross-account client access.
+- Any test against a live MSK cluster or real AWS account.
+
+### Requires manual action / AWS credentials
+- Topic creation needs a host with network access to the private subnets
+  (use SSM Session Manager) and a Kafka distribution with `kafka-topics.sh`
+  plus the `aws-msk-iam-auth` library; use an operator role, not the
+  runtime `app_service` role.
+- Dev/staging: run `apply-topics.sh` with `REPLICATION_FACTOR_CAP=2`.
+- MSK and Glue version strings / instance types have **not** been
+  validated against the AWS API — confirm `3.7.x` and the broker instance
+  type are available in your region on first `plan`.
+- `terraform_ci` is untested against a real apply; expect to add a missing
+  action on first run. It is roughly half of the 10,240-character inline
+  policy limit — later phases (compute, edge) should split it into
+  multiple policies rather than grow this one.
+
 ## [Unreleased] — Phase 5: Data Infrastructure
 
 ### Added

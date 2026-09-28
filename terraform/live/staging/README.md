@@ -10,9 +10,11 @@ Root Terraform configuration for the `staging` environment. Instantiates:
 - `../../modules/object-storage` — S3 buckets (backups/artifacts/logs)
 - `../../modules/rds` — PostgreSQL (Multi-AZ per env config, RDS-managed master password)
 - `../../modules/redis` — ElastiCache Redis (Terraform-generated AUTH token)
+- `../../modules/msk` — Amazon MSK (IAM auth only, TLS, KMS-encrypted); topics via `scripts/messaging/`
+- `../../modules/glue-schema-registry` — AWS Glue Schema Registry (+ private interface endpoint)
 
 Not yet instantiated here (added as their phases land): DNS record wiring,
-Kafka, compute, load balancer, observability stack.
+compute, load balancer, observability stack.
 
 ## Manual step after production's `iam` module is applied
 

@@ -42,7 +42,7 @@ FastAPI services      Java services              Workers
    |                        |                         |
    +------------+-----------+------------+------------+
                 |                        |
-         Internal services       Kafka/Redpanda
+         Internal services       Kafka (Amazon MSK)
                 |                        |
    +------------+------------+   +-------+--------+
    |                         |   |                |
@@ -129,12 +129,32 @@ DataClassification=<classification>
 
 ```
 API request → auth → transaction service → event publication →
-Kafka/Redpanda → consumer → database → notification
+Kafka (MSK) → consumer → database → notification
 ```
 
 Trace ID / span ID / correlation ID / request ID are propagated across
 this flow (OpenTelemetry, Phase 8). Sensitive financial data is never
 placed in tracing attributes or logs.
+
+## Messaging (implemented in Phase 6)
+
+- **Broker platform:** Amazon MSK, in the data-tier subnets. Redpanda /
+  self-hosted Kafka was considered and not chosen: this repo has no compute
+  until Phase 7, and MSK removes broker patching/disk management. Swapping
+  it later means a new module alongside `terraform/modules/msk/`, since
+  consumers depend only on the bootstrap-broker string and security group.
+- **Authentication:** SASL/IAM only, TLS in transit, KMS at rest. There is
+  no plaintext listener and no SASL/SCRAM credential to rotate.
+- **Schema registry:** AWS Glue Schema Registry (regional AWS API, optional
+  private interface endpoint) — not a self-hosted service. Schemas are
+  registered by the owning application repositories.
+- **Topics:** declared in `scripts/messaging/topics.yaml` and created
+  (create-only, never altered/deleted) by `scripts/messaging/apply-topics.sh`,
+  each with `-retry` and `-dlq` companions. Topics are deliberately not
+  Terraform resources.
+- **Not yet implemented:** consumer-lag / DLQ-growth alerting (Phase 8),
+  idempotency-safe DLQ replay tooling (blocked on an idempotency contract
+  with the application repos), cross-region replication.
 
 ## Recovery paths (planned, detailed in Phase 10)
 

@@ -95,3 +95,23 @@ resource "aws_kms_alias" "database" {
   name          = "alias/${local.name_prefix}-database"
   target_key_id = aws_kms_key.database.key_id
 }
+
+# Messaging key (MSK broker storage encryption) -----------------------
+
+resource "aws_kms_key" "messaging" {
+  description             = "${local.name_prefix} — messaging (MSK broker storage) encryption"
+  deletion_window_in_days = var.key_deletion_window_days
+  enable_key_rotation     = var.enable_key_rotation
+
+  policy = jsonencode({
+    Version   = "2012-10-17"
+    Statement = concat([local.root_admin_statement], local.key_admin_statement)
+  })
+
+  tags = merge(local.common_tags, { Name = "${local.name_prefix}-messaging", Service = "messaging" })
+}
+
+resource "aws_kms_alias" "messaging" {
+  name          = "alias/${local.name_prefix}-messaging"
+  target_key_id = aws_kms_key.messaging.key_id
+}

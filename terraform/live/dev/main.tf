@@ -138,3 +138,49 @@ module "redis" {
   num_cache_clusters         = var.redis_num_cache_clusters
   automatic_failover_enabled = var.redis_automatic_failover_enabled
 }
+
+module "ecr" {
+  source = "../../modules/ecr"
+
+  project     = var.project
+  environment = var.environment
+}
+
+module "alb" {
+  source = "../../modules/alb"
+
+  project            = var.project
+  environment        = var.environment
+  vpc_id             = module.networking.vpc_id
+  public_subnet_ids  = module.networking.public_subnet_ids
+  security_group_id  = module.security_groups.alb_security_group_id
+  # certificate_arn left unset (HTTP-only): this environment does not own
+  # a DNS zone to validate a certificate against yet -- see
+  # terraform/modules/alb/README.md and this directory's README.md.
+}
+
+module "waf" {
+  source = "../../modules/waf"
+
+  project          = var.project
+  environment      = var.environment
+  alb_arn          = module.alb.alb_arn
+  logs_kms_key_arn = module.kms.logs_key_arn
+}
+
+module "ecs" {
+  source = "../../modules/ecs"
+
+  project               = var.project
+  environment           = var.environment
+  vpc_id                = module.networking.vpc_id
+  app_subnet_ids        = module.networking.app_subnet_ids
+  app_security_group_id = module.security_groups.app_security_group_id
+  listener_arn          = module.alb.primary_listener_arn
+  task_role_arn         = module.iam.app_service_role_arn
+  secrets_kms_key_arn   = module.kms.secrets_key_arn
+  logs_kms_key_arn      = module.kms.logs_key_arn
+
+  # services intentionally left at its default ({}) -- see
+  # terraform/modules/ecs/README.md for why.
+}

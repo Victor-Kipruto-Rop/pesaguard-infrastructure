@@ -31,6 +31,30 @@ variable "existing_zone_id" {
   default     = ""
 }
 
+variable "create_alb_records" {
+  description = "Whether to create ALIAS records pointing at an ALB. Requires alb_dns_name and alb_zone_id (from the alb module)."
+  type        = bool
+  default     = false
+}
+
+variable "alb_dns_name" {
+  description = "ALB DNS name (the alb module's alb_dns_name output). Required when create_alb_records is true."
+  type        = string
+  default     = ""
+}
+
+variable "alb_zone_id" {
+  description = "The ALB's own hosted zone ID (the alb module's alb_zone_id output, NOT this module's Route 53 zone). Required when create_alb_records is true."
+  type        = string
+  default     = ""
+}
+
+variable "alb_record_names" {
+  description = "Subdomain names to point at the ALB, e.g. [\"api\", \"app\"]. An empty string creates an apex (domain_name itself) alias."
+  type        = list(string)
+  default     = []
+}
+
 variable "cost_center" {
   description = "Cost center tag."
   type        = string

@@ -12,9 +12,14 @@ Root Terraform configuration for the `development` environment. Instantiates:
 - `../../modules/redis` — ElastiCache Redis (Terraform-generated AUTH token)
 - `../../modules/msk` — Amazon MSK (IAM auth only, TLS, KMS-encrypted); topics via `scripts/messaging/`
 - `../../modules/glue-schema-registry` — AWS Glue Schema Registry (+ private interface endpoint)
+- `../../modules/ecr` — container registries (fastapi-service/java-service/worker)
+- `../../modules/alb` — Application Load Balancer, **HTTP-only** (no DNS zone to validate a cert against yet)
+- `../../modules/waf` — WAFv2 Web ACL (rate limiting + AWS managed rule groups) on the ALB
+- `../../modules/ecs` — ECS cluster (Fargate); `services = {}` — no application deployed yet
 
-Not yet instantiated here (added as their phases land): DNS record wiring,
-compute, load balancer, observability stack.
+Not yet instantiated here: real application services (populate the `ecs`
+module's `services` map once an image exists — see
+`../../modules/ecs/README.md`), and the observability stack (Phase 8).
 
 ## Manual step after production's `iam` module is applied
 

@@ -5,6 +5,69 @@ grouped by implementation phase. This log reflects what has actually been
 implemented and validated — not what is planned (see README.md for the
 phase roadmap).
 
+## [Unreleased] — Phase 7: Compute
+
+### Added
+- `terraform/modules/ecr/` — container registries (`fastapi-service`,
+  `java-service`, `worker`), immutable tags, scan-on-push, a lifecycle
+  policy (expire untagged after N days, keep the most recent N tagged).
+- `terraform/modules/acm/` — DNS-validated ACM certificate; validation
+  records written into the `dns` module's zone automatically. The output
+  ARN is the *validated* certificate, so consumers implicitly wait on
+  validation.
+- `terraform/modules/alb/` — internet-facing ALB. HTTPS (TLS 1.3 policy)
+  with HTTP→HTTPS redirect when a certificate is provided; HTTP-only
+  otherwise. **No target group yet** — both listeners return a fixed 503
+  JSON placeholder response rather than pointing at nothing, until a real
+  service exists.
+- `terraform/modules/waf/` — WAFv2 Web ACL on the ALB: a rate-based rule
+  plus the AWS-managed Common and Known-Bad-Inputs rule groups, logged to
+  a CloudWatch group this module owns (AWS requires the `aws-waf-logs-`
+  name prefix, so the module creates the log group itself rather than
+  accepting one as a variable).
+- `terraform/modules/ecs/` — ECS cluster (Fargate + Fargate Spot capacity
+  providers) and a fully reusable per-service pattern (task definition,
+  target group, listener rule, service, CPU-based autoscaling) behind a
+  `services` map that defaults to `{}`. Two IAM roles per deployment: an
+  execution role this module creates (ECS agent: pull image, write logs,
+  fetch only the secrets referenced by `services`) and the existing
+  `app_service` role from `terraform/modules/iam/`, reused as the task
+  role application code runs as.
+- `terraform/modules/dns/` — ALB ALIAS record support
+  (`create_alb_records`, `alb_record_names`), with a `local.zone_id` that
+  works whether this instance created the zone or was told to reuse one.
+- `terraform/live/production/` additionally gets a **second instance** of
+  the `dns` module (`module.dns_records`) to write the ALB alias records,
+  specifically to avoid a `dns → alb → acm → dns` dependency cycle that a
+  single combined instance would create.
+- `terraform/live/{dev,staging}/` get `ecr`, `alb` (HTTP-only — no zone to
+  validate a cert against), `waf`, and `ecs`; `production` additionally
+  gets `acm` and the DNS alias records.
+
+### Changed
+- `security-groups`: no change to the kafka ports from Phase 6, but this
+  phase's `ecs` module README documents that any service port other than
+  the pre-opened `app_port` needs a security-groups change too.
+
+### Not yet implemented
+- No real application service in any environment — `services = {}`
+  everywhere (see `terraform/modules/ecs/README.md`). Both ALB listeners
+  serve a placeholder 503 response.
+- ALB access logging (deferred — would conflict with
+  `object-storage`'s existing bucket policy on the same bucket; see
+  `terraform/modules/alb/README.md`).
+- Dev/staging have no TLS (HTTP-only) because neither owns a DNS zone.
+- Any CloudWatch alarms on ECS/ALB/WAF metrics (Phase 8).
+- EC2/EKS compute paths (Fargate only, by deliberate choice — see
+  `terraform/modules/ecs/README.md`).
+
+### Requires manual action / AWS credentials
+- `kafka_version` (`3.7.x`), MSK/ECS instance types, and ACM/Route53
+  interactions have still not been validated against a real AWS account
+  from this environment (no AWS credentials or `terraform` CLI here).
+- Populating `terraform/modules/ecs/`'s `services` map with a real image
+  requires an image already pushed to `ecr`'s output repository URL.
+
 ## [Unreleased] — Phase 6: Messaging
 
 ### Added

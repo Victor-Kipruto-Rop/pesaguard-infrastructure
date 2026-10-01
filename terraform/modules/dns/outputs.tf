@@ -1,6 +1,6 @@
 output "zone_id" {
   description = "Route 53 zone ID in use (newly created or existing, per create_zone)."
-  value       = var.create_zone ? aws_route53_zone.this[0].zone_id : var.existing_zone_id
+  value       = local.zone_id
 }
 
 output "name_servers" {

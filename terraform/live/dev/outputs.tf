@@ -103,3 +103,19 @@ output "msk_bootstrap_brokers_sasl_iam" {
 output "glue_schema_registry_name" {
   value = module.glue_schema_registry.registry_name
 }
+
+output "ecr_repository_urls" {
+  value = module.ecr.repository_urls
+}
+
+output "alb_dns_name" {
+  value = module.alb.alb_dns_name
+}
+
+output "waf_web_acl_arn" {
+  value = module.waf.web_acl_arn
+}
+
+output "ecs_cluster_name" {
+  value = module.ecs.cluster_name
+}

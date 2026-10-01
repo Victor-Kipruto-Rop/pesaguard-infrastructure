@@ -3,14 +3,14 @@
 Creates (or references) the Route 53 public hosted zone for a PesaGuard
 domain. Intentionally minimal in this phase: **only the zone**, no records.
 
-## Why no records yet
+## ALB records (Phase 7)
 
-Records like `api.pesaguard.victorkipruto.com` need something real to
-point at (an ALB DNS name, an ACM validation CNAME). Neither exists until
-Phase 4 (ACM) and Phase 7 (load balancer) are implemented. Creating
-placeholder A records pointing nowhere would be exactly the kind of fake
-infrastructure this repository's implementation rules prohibit — so
-`records.tf` is added to this module in Phase 7, not now.
+`create_alb_records = true` plus `alb_dns_name` / `alb_zone_id` (from
+`terraform/modules/alb/`) creates an ALIAS record per name in
+`alb_record_names` (e.g. `["api", "app"]`; `""` for the apex). ACM
+certificate *validation* records are handled separately, by
+`terraform/modules/acm/` writing directly into this module's zone via its
+own `zone_id` input — not by this module.
 
 ## One zone or one per environment?
 

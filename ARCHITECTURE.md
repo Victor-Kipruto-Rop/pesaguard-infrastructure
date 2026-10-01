@@ -156,6 +156,26 @@ placed in tracing attributes or logs.
   idempotency-safe DLQ replay tooling (blocked on an idempotency contract
   with the application repos), cross-region replication.
 
+## Compute and edge (implemented in Phase 7)
+
+- **Compute platform:** ECS on Fargate (not EC2) — see
+  `terraform/modules/ecs/README.md` for why. No AMI pipeline or host
+  fleet exists or is planned until/unless Fargate proves insufficient.
+- **Edge:** Internet → Route 53 → WAFv2 → ALB (HTTPS, TLS 1.3 policy,
+  HTTP→HTTPS redirect) → ECS target groups. Production has a real ACM
+  certificate and DNS records; dev/staging run the ALB **HTTP-only**
+  because neither owns a DNS zone to validate a certificate against (see
+  `terraform/live/{dev,staging}/README.md`) — acceptable only because
+  nothing is deployed behind them yet.
+- **No application deployed yet.** Every environment's `ecs` module call
+  has `services = {}`. Both ALB listeners return a fixed 503 placeholder
+  response rather than pointing at a target group with nothing behind it.
+  This document will be updated, honestly, once a real service exists —
+  until then, "deployment model status" below still describes the actual
+  state, not the intended one.
+- **ALB access logs are not yet enabled** — see `terraform/modules/alb/README.md`
+  for the cross-module bucket-policy conflict that deferred it to Phase 8/9.
+
 ## Recovery paths (planned, detailed in Phase 10)
 
 ```
@@ -168,11 +188,16 @@ and are configurable rather than hard-coded.
 
 ## Deployment model status
 
-**Current:** not yet implemented — no compute, no deployed workloads.
+**Current (as of Phase 7):** the compute platform exists (ECS on Fargate,
+one cluster per environment, an ALB in front of it, WAF attached) but no
+application service is deployed to it — `services = {}` in every
+environment's `ecs` module call. Single-region only; "active-active" and
+"active-passive" are both inapplicable until a second region exists (see
+"Failure domains & availability" above). This section will be updated
+again, honestly, once a real service is deployed — it will not claim
+capabilities that don't yet exist.
 
-**Planned Phase 7+:** ECS/EC2 as the initial compute strategy, with the
-module boundaries designed so a future move to EKS/Kubernetes does not
-require restructuring the repository. This document will be updated to
-state plainly whether active-active or active-passive is actually
-implemented once that work lands — it will not claim capabilities that
-don't yet exist.
+ECS was chosen on Fargate rather than EC2 specifically so this repository
+never needs an AMI-baking pipeline or host-patching automation; moving to
+EKS later is possible without restructuring `terraform/modules/ecs/`'s
+service-definition interface, per `terraform/modules/ecs/README.md`.

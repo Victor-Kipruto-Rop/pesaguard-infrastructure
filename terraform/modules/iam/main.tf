@@ -262,6 +262,102 @@ resource "aws_iam_role_policy" "terraform_ci" {
   policy = data.aws_iam_policy_document.terraform_ci.json
 }
 
+# Second inline policy for Phases 7-8, kept separate from the Phases-1-6
+# policy above rather than grown indefinitely -- each AWS inline role
+# policy has a 10,240-character hard limit, and this repo would rather
+# split early and predictably than hit that limit mid-phase. Extend THIS
+# document for compute/edge/observability-adjacent services; start a
+# third if this one approaches the limit too.
+data "aws_iam_policy_document" "terraform_ci_phase_7_8" {
+  # --- Phase 7: compute & edge --------------------------------------------
+
+  statement {
+    sid       = "EcsManagementScoped"
+    effect    = "Allow"
+    actions   = ["ecs:*"]
+    resources = [
+      "arn:aws:ecs:${var.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.project}-${var.environment}-*",
+      "arn:aws:ecs:${var.region}:${data.aws_caller_identity.current.account_id}:service/${var.project}-${var.environment}-*/*",
+      "arn:aws:ecs:${var.region}:${data.aws_caller_identity.current.account_id}:task-definition/${var.project}-${var.environment}-*:*",
+    ]
+  }
+
+  statement {
+    sid       = "EcrManagementScoped"
+    effect    = "Allow"
+    actions   = ["ecr:*"]
+    resources = ["arn:aws:ecr:${var.region}:${data.aws_caller_identity.current.account_id}:repository/${lower(var.project)}/${var.environment}/*"]
+  }
+
+  statement {
+    sid       = "WafManagementScoped"
+    effect    = "Allow"
+    actions   = ["wafv2:*"]
+    resources = ["arn:aws:wafv2:${var.region}:${data.aws_caller_identity.current.account_id}:regional/webacl/${var.project}-${var.environment}-waf/*"]
+  }
+
+  # ELB (ALB), ACM, and the create/list-only edges of ECS/ECR/WAF/AMP/
+  # Grafana/autoscaling do not support resource-level scoping for the
+  # actions CI needs at first-apply time (the resource doesn't exist yet,
+  # or AWS simply doesn't define a resource-level policy for that action).
+  # This is the same documented, deliberate trade-off as
+  # DataServicesUnscopedActions above -- not a default-to-permissive habit.
+  statement {
+    sid    = "EdgeAndComputeUnscopedActions"
+    effect = "Allow"
+    actions = [
+      "elasticloadbalancing:*",
+      "acm:*",
+      "ecr:CreateRepository", "ecr:GetAuthorizationToken",
+      "ecs:CreateCluster", "ecs:RegisterTaskDefinition", "ecs:Describe*", "ecs:List*",
+      "wafv2:CreateWebACL", "wafv2:CheckCapacity", "wafv2:ListWebACLs",
+      "application-autoscaling:*",
+    ]
+    resources = ["*"]
+  }
+
+  # --- Phase 8: observability ----------------------------------------------
+
+  statement {
+    sid       = "SnsAlertsManagementScoped"
+    effect    = "Allow"
+    actions   = ["sns:*"]
+    resources = ["arn:aws:sns:${var.region}:${data.aws_caller_identity.current.account_id}:${var.project}-${var.environment}-alerts-*"]
+  }
+
+  statement {
+    sid       = "CloudWatchAlarmsManagementScoped"
+    effect    = "Allow"
+    actions   = ["cloudwatch:PutMetricAlarm", "cloudwatch:DeleteAlarms", "cloudwatch:TagResource"]
+    resources = ["arn:aws:cloudwatch:${var.region}:${data.aws_caller_identity.current.account_id}:alarm:${var.project}-${var.environment}-*"]
+  }
+
+  statement {
+    sid     = "CloudWatchAlarmsReadActions"
+    effect  = "Allow"
+    actions = ["cloudwatch:Describe*", "cloudwatch:List*", "cloudwatch:GetMetricData"]
+    resources = ["*"]
+  }
+
+  # AMP (aps) and Grafana workspaces are not named with this project's
+  # prefix in their ARNs (ID-based, assigned by AWS at creation) and have
+  # too few distinct actions per workspace to justify a tag-based
+  # condition here -- same "create-time ARN doesn't exist yet" reasoning
+  # as ACM above.
+  statement {
+    sid       = "AmpAndGrafanaManagement"
+    effect    = "Allow"
+    actions   = ["aps:*", "grafana:*"]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "terraform_ci_phase_7_8" {
+  name   = "${local.name_prefix}-terraform-ci-policy-phase-7-8"
+  role   = aws_iam_role.terraform_ci.id
+  policy = data.aws_iam_policy_document.terraform_ci_phase_7_8.json
+}
+
 # Application-tier role (FastAPI / Java services / workers) ----------------
 # Assumable by either ECS tasks or EC2 instances, so this role works
 # whichever compute strategy Phase 7 chooses.
@@ -378,6 +474,30 @@ data "aws_iam_policy_document" "app_service" {
       effect    = "Allow"
       actions   = ["kafka-cluster:AlterGroup", "kafka-cluster:DescribeGroup"]
       resources = ["${local.msk_group_arn_prefix}/*"]
+    }
+  }
+
+  # AMP remote-write + X-Ray trace export, for a future OTel/ADOT sidecar.
+  # X-Ray's write actions (PutTraceSegments/PutTelemetryRecords) do not
+  # support resource-level scoping -- AWS-documented limitation, not a
+  # choice made here to be permissive.
+  dynamic "statement" {
+    for_each = var.enable_observability_access ? [1] : []
+    content {
+      sid       = "AmpRemoteWrite"
+      effect    = "Allow"
+      actions   = ["aps:RemoteWrite"]
+      resources = [var.amp_workspace_arn]
+    }
+  }
+
+  dynamic "statement" {
+    for_each = var.enable_observability_access ? [1] : []
+    content {
+      sid       = "XRayWrite"
+      effect    = "Allow"
+      actions   = ["xray:PutTraceSegments", "xray:PutTelemetryRecords", "xray:GetSamplingRules", "xray:GetSamplingTargets"]
+      resources = ["*"]
     }
   }
 

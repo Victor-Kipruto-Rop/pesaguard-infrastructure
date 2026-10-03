@@ -34,6 +34,17 @@ ARN variable is set, because the ARNs are unknown at plan time on a first
 apply and Terraform cannot use an unknown value to decide whether a
 `for_each` statement exists.
 
+## Observability access (optional, flag-gated, not yet consumed)
+
+`enable_observability_access` grants `app_service` `aps:RemoteWrite`
+(scoped to one AMP workspace ARN) and X-Ray trace-write actions (not
+resource-scopable — an AWS limitation, not a choice made here). Nothing
+in this repository uses these permissions yet: no OpenTelemetry/ADOT
+sidecar exists (see `terraform/modules/ecs/README.md` and
+`terraform/modules/amp/README.md`). The flag exists so enabling tracing
+later is a one-line change here plus adding the sidecar container, not an
+IAM rewrite.
+
 ## GitHub OIDC
 
 `aws_iam_openid_connect_provider` is **account-wide** — creating it twice

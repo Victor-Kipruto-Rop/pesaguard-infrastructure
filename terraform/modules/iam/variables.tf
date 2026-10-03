@@ -132,6 +132,18 @@ variable "glue_registry_arn" {
   default     = ""
 }
 
+variable "enable_observability_access" {
+  description = "Whether to grant the app_service role AMP remote-write and X-Ray write access, for a future OpenTelemetry/ADOT sidecar (not yet implemented — see terraform/modules/amp/README.md and terraform/modules/ecs/README.md). A plain bool for the same plan-time reason as enable_msk_access."
+  type        = bool
+  default     = false
+}
+
+variable "amp_workspace_arn" {
+  description = "AMP workspace ARN. Required when enable_observability_access is true."
+  type        = string
+  default     = ""
+}
+
 variable "cost_center" {
   description = "Cost center tag."
   type        = string

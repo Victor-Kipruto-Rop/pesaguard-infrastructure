@@ -5,6 +5,71 @@ grouped by implementation phase. This log reflects what has actually been
 implemented and validated — not what is planned (see README.md for the
 phase roadmap).
 
+## [Unreleased] — Phase 8: Observability
+
+### Added
+- `terraform/modules/sns-alerts/` — one SNS topic per alert category
+  (infrastructure, database, messaging, application, security), KMS
+  encrypted, with a resource policy allowing only CloudWatch Alarms and
+  AMP's Alertmanager to publish. **No subscriptions created** — see
+  README.md for why that's a deliberate, required manual step.
+- `terraform/modules/cloudwatch-alarms/` — golden-signal alarms using
+  metrics AWS already publishes for RDS (CPU/storage/connections), Redis
+  (per-node CPU/memory — ElastiCache publishes per cache-cluster, not per
+  replication group), MSK (`ActiveControllerCount`,
+  `OfflinePartitionsCount`), ALB (5xx count, target response time), and
+  WAF (blocked-request spike). Works immediately, unlike AMP, since these
+  metrics flow natively with no exporter needed.
+- `terraform/modules/amp/` — Amazon Managed Prometheus workspace, a
+  starter alert rule (`TargetDown`, the one rule meaningful without
+  knowing real metric names), and an Alertmanager definition using AMP's
+  native `sns_configs` receiver (no self-hosted Alertmanager). Explicitly
+  documented as receiving no data yet.
+- `terraform/modules/grafana/` — Amazon Managed Grafana, **disabled by
+  default** (`create = false`) because `AWS_SSO` auth requires IAM
+  Identity Center already enabled account-wide — not something this
+  module will silently turn on.
+- `redis` module: new `member_cluster_ids` output (ElastiCache alarms are
+  per-node). `alb` module: new `alb_arn_suffix` output (the CloudWatch
+  dimension form, not the full ARN).
+- `iam` module: `enable_observability_access` flag granting
+  `aps:RemoteWrite` (scoped to one AMP workspace) and X-Ray write actions
+  (not resource-scopable — AWS limitation) to `app_service`, ready for a
+  future OTel/ADOT sidecar that does not exist yet.
+- `terraform/live/{dev,staging,production}/` wired with all four new
+  modules.
+
+### Fixed
+- **`terraform_ci` had no permissions for any Phase 7 service** (ECS,
+  ECR, ALB, WAF, ACM) — a gap introduced in Phase 7 and only caught now.
+  Rather than keep growing the single Phases-1-6 inline policy toward
+  IAM's 10,240-character limit, Phase 7 and Phase 8 permissions now live
+  in a **second** inline policy (`terraform_ci_phase_7_8`) on the same
+  role. Both are currently ~5.4 KB and ~1.7 KB respectively — comfortable
+  headroom, and a pattern (split early, don't wait for the limit) that
+  should continue if a third policy is ever needed.
+
+### Not yet implemented
+- Nothing remote-writes to AMP (no OTel/ADOT sidecar — see
+  `terraform/modules/amp/README.md`); the workspace and starter rule
+  exist but see no data.
+- No ECS/application-level CloudWatch alarms (nothing deployed — Phase 7).
+- No log aggregation beyond CloudWatch Logs Insights; no distributed
+  tracing.
+- Consumer-lag / DLQ-growth alerting (still blocked on the same thing
+  noted in `scripts/messaging/README.md` since Phase 6).
+
+### Requires manual action
+- **Subscribe someone to every SNS topic** — alarms exist but are
+  currently silent. See `terraform/modules/sns-alerts/README.md`.
+- Confirm IAM Identity Center is enabled before setting `grafana`'s
+  `create = true`.
+- AMP/Grafana resource names, the `sns_configs` Alertmanager receiver
+  schema, and the ElastiCache/MSK CloudWatch dimension names used here
+  have not been validated against a real AWS account from this
+  environment (no credentials or `terraform` CLI here) — confirm on
+  first `plan`.
+
 ## [Unreleased] — Phase 7: Compute
 
 ### Added

@@ -55,7 +55,7 @@ real, working content rather than empty placeholders. Current status:
 - [x] Phase 5 — Data infrastructure
 - [x] Phase 6 — Messaging
 - [x] Phase 7 — Compute
-- [ ] Phase 8 — Observability
+- [x] Phase 8 — Observability
 - [ ] Phase 9 — Deployment automation
 - [ ] Phase 10 — Backup & disaster recovery
 - [ ] Phase 11 — Production hardening

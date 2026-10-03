@@ -16,10 +16,15 @@ Root Terraform configuration for the `staging` environment. Instantiates:
 - `../../modules/alb` — Application Load Balancer, **HTTP-only** (no DNS zone to validate a cert against yet)
 - `../../modules/waf` — WAFv2 Web ACL (rate limiting + AWS managed rule groups) on the ALB
 - `../../modules/ecs` — ECS cluster (Fargate); `services = {}` — no application deployed yet
+- `../../modules/sns-alerts` — SNS topics per alert category (no subscriptions created — see its README)
+- `../../modules/amp` — Amazon Managed Prometheus workspace + starter alert rule + Alertmanager→SNS routing (no data flowing in yet)
+- `../../modules/cloudwatch-alarms` — golden-signal alarms on RDS/Redis/MSK/ALB/WAF, all wired to the SNS topics
+- `../../modules/grafana` — Amazon Managed Grafana, **disabled by default** (requires IAM Identity Center)
 
 Not yet instantiated here: real application services (populate the `ecs`
 module's `services` map once an image exists — see
-`../../modules/ecs/README.md`), and the observability stack (Phase 8).
+`../../modules/ecs/README.md`). SNS topics have no subscribers until someone
+subscribes manually (see `terraform/modules/sns-alerts/README.md`).
 
 ## Manual step after production's `iam` module is applied
 

@@ -76,6 +76,9 @@ module "iam" {
   msk_cluster_arn             = module.msk.cluster_arn
   enable_glue_registry_access = true
   glue_registry_arn           = module.glue_schema_registry.registry_arn
+
+  enable_observability_access = true
+  amp_workspace_arn           = module.amp.workspace_arn
 }
 
 module "msk" {
@@ -219,4 +222,50 @@ module "ecs" {
 
   # services intentionally left at its default ({}) — see
   # terraform/modules/ecs/README.md for why.
+}
+
+module "sns_alerts" {
+  source = "../../modules/sns-alerts"
+
+  project     = var.project
+  environment = var.environment
+  kms_key_arn = module.kms.secrets_key_arn
+}
+
+module "amp" {
+  source = "../../modules/amp"
+
+  project            = var.project
+  environment        = var.environment
+  logs_kms_key_arn   = module.kms.logs_key_arn
+  security_topic_arn = module.sns_alerts.topic_arns["security"]
+  sns_region         = var.region
+}
+
+module "cloudwatch_alarms" {
+  source = "../../modules/cloudwatch-alarms"
+
+  project     = var.project
+  environment = var.environment
+
+  database_topic_arn       = module.sns_alerts.topic_arns["database"]
+  messaging_topic_arn      = module.sns_alerts.topic_arns["messaging"]
+  infrastructure_topic_arn = module.sns_alerts.topic_arns["infrastructure"]
+  security_topic_arn       = module.sns_alerts.topic_arns["security"]
+
+  rds_instance_id         = module.rds.db_instance_id
+  redis_cache_cluster_ids = module.redis.member_cluster_ids
+  msk_cluster_name        = module.msk.cluster_name
+  alb_arn_suffix          = module.alb.alb_arn_suffix
+  waf_web_acl_name        = "${var.project}-${var.environment}-waf"
+}
+
+module "grafana" {
+  source = "../../modules/grafana"
+
+  project     = var.project
+  environment = var.environment
+  # create left at its default (false) -- requires IAM Identity Center
+  # pre-enabled; see terraform/modules/grafana/README.md.
+  amp_workspace_arn = module.amp.workspace_arn
 }

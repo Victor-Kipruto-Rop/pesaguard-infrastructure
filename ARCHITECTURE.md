@@ -176,6 +176,41 @@ placed in tracing attributes or logs.
 - **ALB access logs are not yet enabled** — see `terraform/modules/alb/README.md`
   for the cross-module bucket-policy conflict that deferred it to Phase 8/9.
 
+## Observability (implemented in Phase 8)
+
+- **Metrics platform:** Amazon Managed Service for Prometheus (AMP) — a
+  managed, Prometheus-compatible workspace with a starter alerting rule
+  and an Alertmanager definition that routes to SNS natively. **No data
+  flows into it yet**: nothing in this repository is instrumented, since
+  every environment's `ecs` `services` map is still `{}` (Phase 7). The
+  intended path once a real service exists is an OpenTelemetry/ADOT
+  sidecar container remote-writing to AMP — not yet implemented (see
+  `terraform/modules/amp/README.md` and `terraform/modules/ecs/README.md`).
+- **Dashboards:** Amazon Managed Grafana, **disabled by default**
+  (`terraform/modules/grafana/`) because it requires IAM Identity Center
+  already enabled for the account — an account-level prerequisite this
+  repository will not silently turn on.
+- **Alerting that works today, without waiting on AMP:** CloudWatch
+  alarms (`terraform/modules/cloudwatch-alarms/`) on metrics AWS already
+  publishes natively for RDS, Redis, MSK, the ALB, and WAF — covering
+  Saturation, Errors, and Latency of the "golden signals" for the
+  resources that exist. No ECS/application-level alarms yet, since
+  nothing is deployed.
+- **Notification routing:** category-scoped SNS topics
+  (`terraform/modules/sns-alerts/`: infrastructure, database, messaging,
+  application, security). **No one is subscribed to any of them** — this
+  repository does not know who should be paged, so alarms are real but
+  currently silent until an operator subscribes a real destination.
+- **Logging:** already centralized to CloudWatch Logs per-service since
+  earlier phases (RDS, MSK, WAF, ECS, VPC flow logs), each encrypted with
+  the `logs` KMS key. No separate log-aggregation layer (e.g. a
+  self-hosted Loki) is planned — CloudWatch Logs Insights is the query
+  interface, plus Grafana's CloudWatch data source once Grafana is
+  enabled.
+- **Tracing:** not implemented. The `iam` module's
+  `enable_observability_access` flag (X-Ray write, AMP remote-write) is
+  ready for a future OTel/ADOT sidecar, but no sidecar exists yet.
+
 ## Recovery paths (planned, detailed in Phase 10)
 
 ```

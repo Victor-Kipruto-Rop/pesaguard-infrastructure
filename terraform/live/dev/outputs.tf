@@ -119,3 +119,19 @@ output "waf_web_acl_arn" {
 output "ecs_cluster_name" {
   value = module.ecs.cluster_name
 }
+
+output "sns_alert_topic_arns" {
+  value = module.sns_alerts.topic_arns
+}
+
+output "amp_workspace_id" {
+  value = module.amp.workspace_id
+}
+
+output "amp_remote_write_endpoint" {
+  value = module.amp.remote_write_endpoint
+}
+
+output "cloudwatch_alarm_names" {
+  value = module.cloudwatch_alarms.alarm_names
+}

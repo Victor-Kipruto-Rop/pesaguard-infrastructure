@@ -18,7 +18,7 @@ here.
 | VPC, subnets, routing, DNS | FastAPI application code |
 | IAM, KMS, Secrets Manager | Java microservice business logic |
 | RDS PostgreSQL, Redis, S3 | Fraud-detection algorithms |
-| Kafka (MSK), Glue Schema Registry infra | Reconciliation business rules |
+| Kafka (MSK), Glue Schema Registry infr | Reconciliation business rules |
 | ECS/EC2/EKS compute platform | Frontend/UI code |
 | Load balancing, WAF, TLS | Developer portal application |
 | Observability stack (metrics/logs/traces/alerts) | Application SQL migrations |
